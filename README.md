@@ -5,6 +5,4 @@ This sample demonstrates how a desktop app can display a toast notification and 
 
 This sample is provided as-is in order to indicate or demonstrate the functionality of the programming models and feature APIs.
 
-For C#: Before you build this sample, you must download and install the Windows API Code Pack for Microsoft .NET Framework. This provides a source code library that can be used to access some features from managed code. 
-
 How to use the sample: In the sample window, click the View Text Toast button. A sample toast notification appears on the screen. As the user, there are three actions you can take: Touch or click the toast. In a real-world app, this would commonly launch the associated app. Horizontally swipe the toast to dismiss it. Do nothing. The toast will time out. The action you take will be displayed in the sample window to demonstrate the receipt of the event. In a real-world situation, your app would respond appropriately to each of these events. Be aware that for a desktop app to be able to display toast notifications, that app must have a shortcut on the start menu. That shortcut must have an AppUserModelID. For more information see https://msdn.microsoft.com/en-us/library/windows/desktop/hh802768(v=vs.85).aspx 
