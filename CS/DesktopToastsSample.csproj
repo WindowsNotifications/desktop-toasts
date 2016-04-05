@@ -71,6 +71,7 @@
     </Reference>
     <Reference Include="Windows.Data" />
     <Reference Include="Windows.UI" />
+    <Reference Include="Windows.Foundation" />
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />

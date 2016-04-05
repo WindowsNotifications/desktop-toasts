@@ -120,10 +120,47 @@ namespace DesktopToastsSample
 
             // Create the toast and attach event listeners
             ToastNotification toast = new ToastNotification(toastXml);
+            toast.Activated += ToastActivated;
+            toast.Dismissed += ToastDismissed;
+            toast.Failed += ToastFailed;
 
             // Show the toast. Be sure to specify the AppUserModelId on your application's shortcut!
             ToastNotificationManager.CreateToastNotifier(APP_ID).Show(toast);
         }
 
+        private void ToastActivated(ToastNotification sender, object e)
+        {
+            ToastActivated();
+        }
+
+        private void ToastDismissed(ToastNotification sender, ToastDismissedEventArgs e)
+        {
+            String outputText = "";
+            switch (e.Reason)
+            {
+                case ToastDismissalReason.ApplicationHidden:
+                    outputText = "The app hid the toast using ToastNotifier.Hide";
+                    break;
+                case ToastDismissalReason.UserCanceled:
+                    outputText = "The user dismissed the toast";
+                    break;
+                case ToastDismissalReason.TimedOut:
+                    outputText = "The toast has timed out";
+                    break;
+            }
+
+            Dispatcher.Invoke(() =>
+            {
+                Output.Text = outputText;
+            });
+        }
+
+        private void ToastFailed(ToastNotification sender, ToastFailedEventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                Output.Text = "The toast encountered an error.";
+            });
+        }
     }
 }
