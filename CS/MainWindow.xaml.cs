@@ -120,9 +120,9 @@ namespace DesktopToastsSample
 
             // Create the toast and attach event listeners
             ToastNotification toast = new ToastNotification(toastXml);
-            toast.Activated += ToastActivated;
-            toast.Dismissed += ToastDismissed;
-            toast.Failed += ToastFailed;
+            //toast.Activated += ToastActivated;
+            //toast.Dismissed += ToastDismissed;
+            //toast.Failed += ToastFailed;
 
             // Show the toast. Be sure to specify the AppUserModelId on your application's shortcut!
             ToastNotificationManager.CreateToastNotifier(APP_ID).Show(toast);
