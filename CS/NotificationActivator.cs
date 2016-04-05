@@ -20,9 +20,9 @@ namespace DesktopToastsSample
 
         public static void Initialize()
         {
-            var regService = new RegistrationServices();
+            regService = new RegistrationServices();
 
-            int cookie = regService.RegisterTypeForComClients(
+            cookie = regService.RegisterTypeForComClients(
                 typeof(NotificationActivator),
                 RegistrationClassContext.LocalServer,
                 RegistrationConnectionType.MultipleUse);
