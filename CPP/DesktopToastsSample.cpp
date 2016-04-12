@@ -12,7 +12,7 @@
 #include <wrl.h>
 #include <wrl\wrappers\corewrappers.h>
 #include <windows.ui.notifications.h>
-#include "notificationactivationcallback.h"
+#include "NotificationActivationCallback.h"
 
 //  Name:     System.AppUserModel.ToastActivatorCLSID -- PKEY_AppUserModel_ToastActivatorCLSID
 //  Type:     Guid -- VT_CLSID
