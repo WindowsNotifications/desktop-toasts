@@ -7,6 +7,7 @@ using System.Windows;
 using Windows.Data.Xml.Dom;
 using Windows.UI.Notifications;
 using DesktopToastsSample.ShellHelpers;
+using Microsoft.Toolkit.Uwp.Notifications;
 
 namespace DesktopToastsSample
 {
@@ -111,23 +112,41 @@ namespace DesktopToastsSample
         // See the "Toasts" sample for more detail on what can be done with toasts
         private void ShowToastButton_Click(object sender, RoutedEventArgs e)
         {
-            // Get a toast XML template
-            XmlDocument toastXml = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastImageAndText04);
-
-            // Fill in the text elements
-            XmlNodeList stringElements = toastXml.GetElementsByTagName("text");
-            for (int i = 0; i < stringElements.Length; i++)
+            // Create the toast content
+            ToastContent content = new ToastContent()
             {
-                stringElements[i].AppendChild(toastXml.CreateTextNode("Line " + i));
-            }
+                Visual = new ToastVisual()
+                {
+                    BindingGeneric = new ToastBindingGeneric()
+                    {
+                        Children =
+                        {
+                            new AdaptiveText()
+                            {
+                                Text = "Hello World"
+                            },
 
-            // Specify the absolute path to an image as a URI
-            String imagePath = new System.Uri(Path.GetFullPath("toastImageAndText.png")).AbsoluteUri;
-            XmlNodeList imageElements = toastXml.GetElementsByTagName("image");
-            imageElements[0].Attributes.GetNamedItem("src").NodeValue = imagePath;
+                            new AdaptiveText()
+                            {
+                                Text = "This is a Win32 toast notification!"
+                            }
+                        },
+
+                        AppLogoOverride = new ToastGenericAppLogo()
+                        {
+                            // Specify the absolute path to an image as a URI
+                            Source = new System.Uri(Path.GetFullPath("toastImageAndText.png")).AbsoluteUri
+                        }
+                    }
+                }
+            };
+
+            // Create XML from the toast content
+            XmlDocument xml = new XmlDocument();
+            xml.LoadXml(content.GetContent());
 
             // Create the toast and attach event listeners
-            ToastNotification toast = new ToastNotification(toastXml);
+            ToastNotification toast = new ToastNotification(xml);
             toast.Failed += ToastFailed;
 
             // Show the toast. Be sure to specify the AppUserModelId on your application's shortcut!
