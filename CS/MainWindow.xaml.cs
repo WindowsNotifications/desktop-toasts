@@ -27,7 +27,15 @@ namespace DesktopToastsSample
         {
             Dispatcher.Invoke(() =>
             {
+                // Open the window if it was minimized
+                if (WindowState == WindowState.Minimized)
+                {
+                    WindowState = WindowState.Normal;
+                }
+
+                // And then activate the window
                 Activate();
+
                 Output.Text = "The user activated the toast.";
             });
         }
@@ -120,8 +128,6 @@ namespace DesktopToastsSample
 
             // Create the toast and attach event listeners
             ToastNotification toast = new ToastNotification(toastXml);
-            toast.Activated += ToastActivated;
-            toast.Dismissed += ToastDismissed;
             toast.Failed += ToastFailed;
 
             // Show the toast. Be sure to specify the AppUserModelId on your application's shortcut!
@@ -131,28 +137,6 @@ namespace DesktopToastsSample
         private void ToastActivated(ToastNotification sender, object e)
         {
             ToastActivated();
-        }
-
-        private void ToastDismissed(ToastNotification sender, ToastDismissedEventArgs e)
-        {
-            String outputText = "";
-            switch (e.Reason)
-            {
-                case ToastDismissalReason.ApplicationHidden:
-                    outputText = "The app hid the toast using ToastNotifier.Hide";
-                    break;
-                case ToastDismissalReason.UserCanceled:
-                    outputText = "The user dismissed the toast";
-                    break;
-                case ToastDismissalReason.TimedOut:
-                    outputText = "The toast has timed out";
-                    break;
-            }
-
-            Dispatcher.Invoke(() =>
-            {
-                Output.Text = outputText;
-            });
         }
 
         private void ToastFailed(ToastNotification sender, ToastFailedEventArgs e)
