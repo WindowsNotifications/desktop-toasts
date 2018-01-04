@@ -8,6 +8,7 @@ using Windows.Data.Xml.Dom;
 using Windows.UI.Notifications;
 using DesktopToastsSample.ShellHelpers;
 using Microsoft.Toolkit.Uwp.Notifications;
+using System.Linq;
 
 namespace DesktopToastsSample
 {
@@ -24,7 +25,7 @@ namespace DesktopToastsSample
             this.Closing += CloseMainWindow;
         }
 
-        public void ToastActivated()
+        public void ToastActivated(string invokedArgs, NOTIFICATION_USER_INPUT_DATA[] data)
         {
             Dispatcher.Invoke(() =>
             {
@@ -37,7 +38,7 @@ namespace DesktopToastsSample
                 // And then activate the window
                 Activate();
 
-                Output.Text = "The user activated the toast.";
+                Output.Text = "The user activated the toast.\n\nArgs: " + invokedArgs + "\n\nData:\n" + string.Join("\n ", data.Select(i => i.Key + ": " + i.Value));
             });
         }
 
@@ -115,6 +116,8 @@ namespace DesktopToastsSample
             // Create the toast content
             ToastContent content = new ToastContent()
             {
+                Launch = "action=viewToast",
+
                 Visual = new ToastVisual()
                 {
                     BindingGeneric = new ToastBindingGeneric()
@@ -138,6 +141,32 @@ namespace DesktopToastsSample
                             Source = new System.Uri(Path.GetFullPath("toastImageAndText.png")).AbsoluteUri
                         }
                     }
+                },
+
+                Actions = new ToastActionsCustom()
+                {
+                    Inputs =
+                    {
+                        new ToastSelectionBox("status")
+                        {
+                            Title = "Does your app use toasts?",
+                            DefaultSelectionBoxItemId = "yes",
+                            Items =
+                            {
+                                new ToastSelectionBoxItem("yes", "Yes"),
+                                new ToastSelectionBoxItem("maybe", "Maybe"),
+                                new ToastSelectionBoxItem("no", "No")
+                            }
+                        }
+                    },
+                    Buttons =
+                    {
+                        new ToastButton("Answer", "action=answer")
+                        {
+                            ActivationType = ToastActivationType.Background
+                        },
+                        new ToastButtonDismiss()
+                    }
                 }
             };
 
@@ -151,11 +180,6 @@ namespace DesktopToastsSample
 
             // Show the toast. Be sure to specify the AppUserModelId on your application's shortcut!
             ToastNotificationManager.CreateToastNotifier(APP_ID).Show(toast);
-        }
-
-        private void ToastActivated(ToastNotification sender, object e)
-        {
-            ToastActivated();
         }
 
         private void ToastFailed(ToastNotification sender, ToastFailedEventArgs e)

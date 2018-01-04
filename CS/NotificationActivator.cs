@@ -14,7 +14,7 @@ namespace DesktopToastsSample
         {
             App.Current.Dispatcher.Invoke(() =>
             {
-                (App.Current.MainWindow as MainWindow).ToastActivated();
+                (App.Current.MainWindow as MainWindow).ToastActivated(invokedArgs, data);
             });
         }
 
