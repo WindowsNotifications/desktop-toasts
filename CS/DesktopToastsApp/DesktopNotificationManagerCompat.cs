@@ -153,6 +153,11 @@ namespace DesktopNotifications
         }
 
         /// <summary>
+        /// Gets a boolean representing whether http images can be used within toasts. This is true if running under Desktop Bridge.
+        /// </summary>
+        public static bool CanUseHttpImages { get { return DesktopBridgeHelpers.IsRunningAsUwp(); } }
+
+        /// <summary>
         /// Code from https://github.com/qmatteoq/DesktopBridgeHelpers/edit/master/DesktopBridge.Helpers/Helpers.cs
         /// </summary>
         private class DesktopBridgeHelpers

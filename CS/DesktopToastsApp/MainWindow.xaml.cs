@@ -106,25 +106,21 @@ namespace DesktopToastsApp
 
                     Buttons =
                     {
+                        // Note that there's no reason to specify background activation, since our COM
+                        // activator decides whether to process in background or launch foreground window
                         new ToastButton("Reply", new QueryString()
                         {
                             { "action", "reply" },
                             { "conversationId", conversationId.ToString() }
 
-                        }.ToString())
-                        {
-                            ActivationType = ToastActivationType.Background
-                        },
+                        }.ToString()),
 
                         new ToastButton("Like", new QueryString()
                         {
                             { "action", "like" },
                             { "conversationId", conversationId.ToString() }
 
-                        }.ToString())
-                        {
-                            ActivationType = ToastActivationType.Background
-                        },
+                        }.ToString()),
 
                         new ToastButton("View", new QueryString()
                         {
@@ -156,6 +152,11 @@ namespace DesktopToastsApp
 
             try
             {
+                if (DesktopNotificationManagerCompat.CanUseHttpImages)
+                {
+                    return httpImage;
+                }
+
                 var directory = Directory.CreateDirectory(System.IO.Path.GetTempPath() + "WindowsNotifications.DesktopToasts.Images");
 
                 if (!_hasPerformedCleanup)
