@@ -1,14 +1,25 @@
-﻿using System;
+﻿// ******************************************************************
+// Copyright (c) Microsoft. All rights reserved.
+// This code is licensed under the MIT License (MIT).
+// THE CODE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
+// THE CODE OR THE USE OR OTHER DEALINGS IN THE CODE.
+// ******************************************************************
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using Windows.UI.Notifications;
 
-namespace DesktopToastsApp
+namespace DesktopNotifications
 {
     public class DesktopNotificationManagerCompat
     {
@@ -23,7 +34,7 @@ namespace DesktopToastsApp
         /// register your COM CLSID and EXE in LocalServer32 registry. Feel free to call this regardless, and we will no-op if running
         /// under Desktop Bridge. Call this upon application startup, before calling any other APIs.
         /// </summary>
-        /// <param name="aumid"></param>
+        /// <param name="aumid">An AUMID that uniquely identifies your application.</param>
         public static void RegisterAumidAndComServer<T>(string aumid)
             where T : NotificationActivator
         {
