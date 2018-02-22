@@ -10,6 +10,7 @@
 // THE CODE OR THE USE OR OTHER DEALINGS IN THE CODE.
 // ******************************************************************
 
+using DesktopNotifications;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
