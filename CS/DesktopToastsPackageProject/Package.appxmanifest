@@ -10,7 +10,7 @@
   IgnorableNamespaces="uap mp rescap com desktop">
 
     <Identity
-      Name="fcc8d22a-b0a9-4702-a683-faeab01fc455"
+      Name="WindowsNotifications.DesktopToasts"
       Publisher="CN=anbare"
       Version="1.0.0.0" />
 
