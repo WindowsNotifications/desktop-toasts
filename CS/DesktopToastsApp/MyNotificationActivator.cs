@@ -35,7 +35,13 @@ namespace DesktopToastsApp
         {
             Application.Current.Dispatcher.Invoke(delegate
             {
-                // Parse the query string (using QueryString.NET)
+                if (arguments.Length == 0)
+                {
+                    OpenWindowIfNeeded();
+                    return;
+                }
+
+                // Parse the query string (using NuGet package QueryString.NET)
                 QueryString args = QueryString.Parse(arguments);
 
                 // See what action is being requested 
@@ -48,7 +54,7 @@ namespace DesktopToastsApp
                         string imageUrl = args["imageUrl"];
 
                         // Make sure we have a window open and in foreground
-                        EnsureWindowOpen();
+                        OpenWindowIfNeeded();
 
                         // And then show the image
                         (App.Current.Windows[0] as MainWindow).ShowImage(imageUrl);
@@ -62,7 +68,7 @@ namespace DesktopToastsApp
                         int conversationId = int.Parse(args["conversationId"]);
 
                         // Make sure we have a window open and in foreground
-                        EnsureWindowOpen();
+                        OpenWindowIfNeeded();
 
                         // And then show the conversation
                         (App.Current.Windows[0] as MainWindow).ShowConversation();
@@ -101,14 +107,14 @@ namespace DesktopToastsApp
 
                     default:
 
-                        EnsureWindowOpen();
+                        OpenWindowIfNeeded();
 
                         break;
                 }
             });
         }
 
-        private void EnsureWindowOpen()
+        private void OpenWindowIfNeeded()
         {
             // Make sure we have a window open (in case user clicked toast while app closed)
             if (App.Current.Windows.Count == 0)
