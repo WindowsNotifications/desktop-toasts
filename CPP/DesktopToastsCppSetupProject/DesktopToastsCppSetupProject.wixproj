@@ -6,11 +6,11 @@
     <ProductVersion>3.9</ProductVersion>
     <ProjectGuid>02c29081-2f02-4f63-bda6-ffcf2ccd3337</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>DesktopToastsSample</OutputName>
+    <OutputName>DesktopToastsCppApp</OutputName>
     <OutputType>Package</OutputType>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
-    <Name>SetupProject</Name>
+    <Name>DesktopToastsCppSetupProject</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -22,13 +22,11 @@
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\Product.wxs">
-      <Link>Product.wxs</Link>
-    </Compile>
+    <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DesktopToastsSample.vcxproj">
-      <Name>DesktopToastsSample</Name>
+    <ProjectReference Include="..\DesktopToastsCppApp\DesktopToastsCppApp.vcxproj">
+      <Name>DesktopToastsCppApp</Name>
       <Project>{77cc36be-ad64-4ad3-95c6-0f352f6a3fe3}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
