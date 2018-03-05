@@ -29,6 +29,7 @@ public:
     static HRESULT CreateToastNotifier(IToastNotifier **notifier);
     static HRESULT CreateToastNotification(ABI::Windows::Data::Xml::Dom::IXmlDocument* content, IToastNotification** notification);
     static HRESULT get_History(DesktopNotificationHistoryCompat *history);
+    static bool CanUseHttpImages();
 
 private:
     static bool s_registeredAumidAndComServer;

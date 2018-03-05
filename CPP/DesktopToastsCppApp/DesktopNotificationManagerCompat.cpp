@@ -162,6 +162,11 @@ HRESULT DesktopNotificationManagerCompat::get_History(DesktopNotificationHistory
     return S_OK;
 }
 
+bool DesktopNotificationManagerCompat::CanUseHttpImages()
+{
+    return IsRunningAsUwp();
+}
+
 void DesktopNotificationManagerCompat::EnsureRegistered()
 {
     // If not registered AUMID yet
