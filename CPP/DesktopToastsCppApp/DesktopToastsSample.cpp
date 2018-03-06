@@ -193,7 +193,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPWSTR cm
         DesktopToastsApp app;
         app.SetHInstance(hInstance);
 
-        std::string cmdLineArgsStr = CW2A(cmdLineArgs);
+        std::wstring cmdLineArgsStr(cmdLineArgs);
 
         // If launched from toast
         if (cmdLineArgsStr.find(TOAST_ACTIVATED_LAUNCH_ARG) != std::string::npos)

@@ -79,7 +79,7 @@ namespace DesktopNotificationManagerCompat
 
         // Include -ToastActivated launch args on the exe
         std::wstring exePathStr(exePath);
-        exePathStr = L"\"" + exePathStr + L"\" -ToastActivated";
+        exePathStr = L"\"" + exePathStr + L"\" " + TOAST_ACTIVATED_LAUNCH_ARG;
         exePath = exePathStr.c_str();
 
         // We don't need to worry about overflow here as ::GetModuleFileName won't
