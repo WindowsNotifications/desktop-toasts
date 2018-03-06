@@ -361,23 +361,7 @@ HRESULT DesktopToastsApp::DisplayToast()
 _Use_decl_annotations_
 HRESULT DesktopToastsApp::CreateToastXml(IXmlDocument** inputXml)
 {
-    *inputXml = nullptr;
-
-    ComPtr<IInspectable> docInspectable;
-    auto hr = RoActivateInstance(HStringReference(RuntimeClass_Windows_Data_Xml_Dom_XmlDocument).Get(), docInspectable.ReleaseAndGetAddressOf());
-    if (SUCCEEDED(hr))
-    {
-        ComPtr<IXmlDocument> doc;
-        hr = docInspectable.As(&doc);
-        if (SUCCEEDED(hr))
-        {
-            ComPtr<IXmlDocumentIO> docIO;
-            hr = doc.As(&docIO);
-            if (SUCCEEDED(hr))
-            {
-                // We create a template for the notification
-                // and then assign text values using XML APIs so they are properly XML escaped
-                hr = docIO->LoadXml(HStringReference(LR"(<toast launch="action=viewConversation&amp;conversationId=5">
+    auto hr = DesktopNotificationManagerCompat::CreateXmlDocumentFromString(LR"(<toast launch="action=viewConversation&amp;conversationId=5">
     <visual>
         <binding template="ToastGeneric">
             <text></text>
@@ -390,22 +374,15 @@ HRESULT DesktopToastsApp::CreateToastXml(IXmlDocument** inputXml)
         <action content="Like" arguments="action=like&amp;conversationId=5"/>
         <action content="View" arguments="action=viewImage&amp;imageUrl=https://picsum.photos/364/202?image=883"/>
     </actions>
-</toast>)").Get());
+</toast>)", inputXml);
 
-                if (SUCCEEDED(hr))
-                {
-                    PCWSTR textValues[] = {
-                        L"Andrew sent you a picture",
-                        L"Check this out, The Enchantments!"
-                    };
-                    hr = SetTextValues(textValues, ARRAYSIZE(textValues), doc.Get());
-                    if (SUCCEEDED(hr))
-                    {
-                        doc.CopyTo(inputXml);
-                    }
-                }
-            }
-        }
+    if (SUCCEEDED(hr))
+    {
+        PCWSTR textValues[] = {
+            L"Andrew sent you a picture",
+            L"Check this out, The Enchantments!"
+        };
+        hr = SetTextValues(textValues, ARRAYSIZE(textValues), *inputXml);
     }
 
     return hr;

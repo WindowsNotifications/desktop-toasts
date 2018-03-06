@@ -50,6 +50,11 @@ public:
     static HRESULT CreateToastNotification(ABI::Windows::Data::Xml::Dom::IXmlDocument* content, IToastNotification** notification);
 
     /// <summary>
+    /// Creates an XmlDocument initialized with the specified string. This is simply a convenience helper method.
+    /// </summary>
+    static HRESULT CreateXmlDocumentFromString(const wchar_t *xmlString, ABI::Windows::Data::Xml::Dom::IXmlDocument** doc);
+
+    /// <summary>
     /// Gets the DesktopNotificationHistoryCompat object. You must have called RegisterActivator first (and also RegisterAumidAndComServer if you're a classic Win32 app), or this will throw an exception.
     /// </summary>
     static HRESULT get_History(DesktopNotificationHistoryCompat *history);

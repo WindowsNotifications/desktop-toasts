@@ -2,6 +2,7 @@
 #include <appmodel.h>
 #include <string>
 
+using namespace ABI::Windows::Data::Xml::Dom;
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 
@@ -122,7 +123,7 @@ HRESULT DesktopNotificationManagerCompat::CreateToastNotifier(IToastNotifier **n
     return hr;
 }
 
-HRESULT DesktopNotificationManagerCompat::CreateToastNotification(ABI::Windows::Data::Xml::Dom::IXmlDocument *content, IToastNotification **notification)
+HRESULT DesktopNotificationManagerCompat::CreateToastNotification(IXmlDocument *content, IToastNotification **notification)
 {
     ComPtr<IToastNotificationFactory> factory;
     auto hr = Windows::Foundation::GetActivationFactory(
@@ -131,6 +132,36 @@ HRESULT DesktopNotificationManagerCompat::CreateToastNotification(ABI::Windows::
     if (SUCCEEDED(hr))
     {
         hr = factory->CreateToastNotification(content, notification);
+    }
+
+    return hr;
+}
+
+HRESULT DesktopNotificationManagerCompat::CreateXmlDocumentFromString(const wchar_t *xmlString, IXmlDocument **doc)
+{
+    *doc = nullptr;
+
+    ComPtr<IInspectable> docInspectable;
+    auto hr = RoActivateInstance(HStringReference(RuntimeClass_Windows_Data_Xml_Dom_XmlDocument).Get(), docInspectable.ReleaseAndGetAddressOf());
+    if (SUCCEEDED(hr))
+    {
+        ComPtr<IXmlDocument> answer;
+        hr = docInspectable.As(&answer);
+        if (SUCCEEDED(hr))
+        {
+            ComPtr<IXmlDocumentIO> docIO;
+            hr = answer.As(&docIO);
+            if (SUCCEEDED(hr))
+            {
+                // Load the XML string
+                hr = docIO->LoadXml(HStringReference(xmlString).Get());
+
+                if (SUCCEEDED(hr))
+                {
+                    answer.CopyTo(doc);
+                }
+            }
+        }
     }
 
     return hr;
