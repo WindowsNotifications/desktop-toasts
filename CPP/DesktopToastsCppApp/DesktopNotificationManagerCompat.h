@@ -11,6 +11,7 @@
 // ******************************************************************
 
 #pragma once
+#include <string>
 #include <memory>
 #include <rpc.h>
 #include <Windows.h>
@@ -67,12 +68,12 @@ public:
 
 private:
     static bool s_registeredAumidAndComServer;
-    static const wchar_t *s_aumid;
+    static std::wstring s_aumid;
     static bool s_registeredActivator;
     static bool s_hasCheckedIsRunningAsUwp;
     static bool s_isRunningAsUwp;
 
-    static void RegisterComServer(GUID clsid, wchar_t exePath[]);
+    static void RegisterComServer(GUID clsid, const wchar_t exePath[]);
     static void EnsureRegistered();
     static bool IsRunningAsUwp();
 };
@@ -115,14 +116,7 @@ public:
     /// </summary>
     DesktopNotificationHistoryCompat(const wchar_t *aumid, Microsoft::WRL::ComPtr<IToastNotificationHistory> history);
 
-    // TODO: The default constructor should be removed? Can we somehow make this support ComPtr and stuff?
-
-    /// <summary>
-    /// Do not call this. Instead, call DesktopNotificationManagerCompat.get_History() to obtain an instance.
-    /// </summary>
-    DesktopNotificationHistoryCompat();
-
 private:
-    const wchar_t *m_aumid = nullptr;
+    std::wstring m_aumid;
     Microsoft::WRL::ComPtr<IToastNotificationHistory> m_history = nullptr;
 };
