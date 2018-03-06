@@ -11,6 +11,7 @@
 // ******************************************************************
 
 #pragma once
+#include <memory>
 #include <rpc.h>
 #include <Windows.h>
 #include <windows.ui.notifications.h>
@@ -32,32 +33,32 @@ public:
     /// </summary>
     /// <param name="aumid">An AUMID that uniquely identifies your application.</param>
     /// <param name="clsid">The CLSID of your NotificationActivator class.</param>
-    static HRESULT RegisterAumidAndComServer(const wchar_t *aumid, GUID clsid);
+    static void RegisterAumidAndComServer(const wchar_t *aumid, GUID clsid);
 
     /// <summary>
     /// Registers your module to handle COM activations. Call this upon application startup.
     /// </summary>
-    static HRESULT RegisterActivator();
+    static void RegisterActivator();
 
     /// <summary>
     /// Creates a toast notifier. You must have called RegisterActivator first (and also RegisterAumidAndComServer if you're a classic Win32 app), or this will throw an exception.
     /// </summary>
-    static HRESULT CreateToastNotifier(IToastNotifier **notifier);
+    static Microsoft::WRL::ComPtr<IToastNotifier> CreateToastNotifier();
 
     /// <summary>
     /// Creates a toast notification. This is simply a convenience helper method.
     /// </summary>
-    static HRESULT CreateToastNotification(ABI::Windows::Data::Xml::Dom::IXmlDocument* content, IToastNotification** notification);
+    static Microsoft::WRL::ComPtr<IToastNotification> CreateToastNotification(ABI::Windows::Data::Xml::Dom::IXmlDocument* content);
 
     /// <summary>
     /// Creates an XmlDocument initialized with the specified string. This is simply a convenience helper method.
     /// </summary>
-    static HRESULT CreateXmlDocumentFromString(const wchar_t *xmlString, ABI::Windows::Data::Xml::Dom::IXmlDocument** doc);
+    static Microsoft::WRL::ComPtr<ABI::Windows::Data::Xml::Dom::IXmlDocument> CreateXmlDocumentFromString(const wchar_t *xmlString);
 
     /// <summary>
     /// Gets the DesktopNotificationHistoryCompat object. You must have called RegisterActivator first (and also RegisterAumidAndComServer if you're a classic Win32 app), or this will throw an exception.
     /// </summary>
-    static HRESULT get_History(DesktopNotificationHistoryCompat *history);
+    static std::unique_ptr<DesktopNotificationHistoryCompat> get_History();
 
     /// <summary>
     /// Gets a boolean representing whether http images can be used within toasts. This is true if running under Desktop Bridge.
@@ -71,7 +72,7 @@ private:
     static bool s_hasCheckedIsRunningAsUwp;
     static bool s_isRunningAsUwp;
 
-    static HRESULT RegisterComServer(GUID clsid, wchar_t exePath[]);
+    static void RegisterComServer(GUID clsid, wchar_t exePath[]);
     static void EnsureRegistered();
     static bool IsRunningAsUwp();
 };
@@ -83,31 +84,31 @@ public:
     /// <summary>
     /// Removes all notifications sent by this app from action center.
     /// </summary>
-    HRESULT Clear();
+    void Clear();
 
     /// <summary>
     /// Gets all notifications sent by this app that are currently still in Action Center.
     /// </summary>
-    HRESULT GetHistory(__FIVectorView_1_Windows__CUI__CNotifications__CToastNotification **toasts);
+    Microsoft::WRL::ComPtr<ABI::Windows::Foundation::Collections::IVectorView<ToastNotification*>> GetHistory();
 
     /// <summary>
     /// Removes an individual toast, with the specified tag label, from action center.
     /// </summary>
     /// <param name="tag">The tag label of the toast notification to be removed.</param>
-    HRESULT Remove(const wchar_t *tag);
+    void Remove(const wchar_t *tag);
 
     /// <summary>
     /// Removes a toast notification from the action using the notification's tag and group labels.
     /// </summary>
     /// <param name="tag">The tag label of the toast notification to be removed.</param>
     /// <param name="group">The group label of the toast notification to be removed.</param>
-    HRESULT Remove(const wchar_t *tag, const wchar_t *group);
+    void Remove(const wchar_t *tag, const wchar_t *group);
 
     /// <summary>
     /// Removes a group of toast notifications, identified by the specified group label, from action center.
     /// </summary>
     /// <param name="group">The group label of the toast notifications to be removed.</param>
-    HRESULT RemoveGroup(const wchar_t *group);
+    void RemoveGroup(const wchar_t *group);
 
     /// <summary>
     /// Do not call this. Instead, call DesktopNotificationManagerCompat.get_History() to obtain an instance.
