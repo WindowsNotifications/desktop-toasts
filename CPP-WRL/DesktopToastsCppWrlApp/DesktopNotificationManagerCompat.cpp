@@ -218,9 +218,8 @@ HRESULT DesktopNotificationHistoryCompat::Clear()
 
 HRESULT DesktopNotificationHistoryCompat::GetHistory(ABI::Windows::Foundation::Collections::IVectorView<ToastNotification*> **toasts)
 {
-    ComPtr<IToastNotificationHistory> history(m_history);
     ComPtr<IToastNotificationHistory2> history2;
-    RETURN_IF_FAILED(history.As(&history2));
+    RETURN_IF_FAILED(m_history.As(&history2));
 
     if (m_aumid.empty())
     {
