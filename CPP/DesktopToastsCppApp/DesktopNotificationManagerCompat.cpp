@@ -1,5 +1,6 @@
 #include "DesktopNotificationManagerCompat.h"
 #include <appmodel.h>
+#include <wrl\wrappers\corewrappers.h>
 
 #define THROW_IF_FAILED(hr) if (FAILED(hr)) { throw hr; }
 

@@ -1,21 +1,12 @@
 #pragma comment(linker,"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #include <atlstr.h>
-#include <SDKDDKVer.h>
-#include <Windows.h>
-#include <Psapi.h>
+#include "DesktopNotificationManagerCompat.h"
+#include "NotificationActivationCallback.h"
 #include <string>
-#include <strsafe.h>
-#include <ShObjIdl.h>
-#include <Shlobj.h>
-#include <Pathcch.h>
-#include <propvarutil.h>
-#include <propkey.h>
+#include <windows.ui.notifications.h>
 #include <wrl.h>
 #include <wrl\wrappers\corewrappers.h>
-#include <windows.ui.notifications.h>
-#include "NotificationActivationCallback.h"
-#include "DesktopNotificationManagerCompat.h"
 
 #define THROW_IF_FAILED(hr) if (FAILED(hr)) { throw hr; }
 
@@ -112,10 +103,10 @@ public:
     {
         try
         {
-            std::string arguments = CW2A(invokedArgs);
+            std::wstring arguments(invokedArgs);
 
             // Background: Quick reply to the conversation
-            if (arguments.find("action=reply") == 0)
+            if (arguments.find(L"action=reply") == 0)
             {
                 // Get the response user typed (we know this is first and only user input since our toasts only have one input)
                 LPCWSTR response = data[0].Value;
@@ -124,7 +115,7 @@ public:
             }
 
             // Background: Send a like
-            else if (arguments.find("action=like") == 0)
+            else if (arguments.find(L"action=like") == 0)
             {
                 DesktopToastsApp::SendBasicToast(L"Sending like...");
             }
@@ -136,13 +127,13 @@ public:
                 DesktopToastsApp::GetInstance()->OpenWindowIfNeeded();
 
                 // Open the image
-                if (arguments.find("action=viewImage") == 0)
+                if (arguments.find(L"action=viewImage") == 0)
                 {
                     DesktopToastsApp::GetInstance()->SetMessage(L"NotificationActivator - The user wants to view the image.");
                 }
 
                 // Open the conversation
-                else if (arguments.find("action=viewConversation") == 0)
+                else if (arguments.find(L"action=viewConversation") == 0)
                 {
                     DesktopToastsApp::GetInstance()->SetMessage(L"NotificationActivator - The user wants to view the conversation.");
                 }
