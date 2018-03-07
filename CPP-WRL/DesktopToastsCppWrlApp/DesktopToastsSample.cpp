@@ -7,7 +7,7 @@
 #include <wrl.h>
 #include <wrl\wrappers\corewrappers.h>
 
-#define RETURN_IF_FAILED(hr) if (FAILED(hr)) { return hr; }
+#define RETURN_IF_FAILED(hr) do { HRESULT _hrTemp = hr; if (FAILED(_hrTemp)) { return _hrTemp; } } while (false)
 
 using namespace ABI::Windows::Data::Xml::Dom;
 using namespace ABI::Windows::UI::Notifications;
