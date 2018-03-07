@@ -259,7 +259,7 @@ HRESULT DesktopNotificationHistoryCompat::Remove(const wchar_t *tag)
     }
 }
 
-HRESULT DesktopNotificationHistoryCompat::Remove(const wchar_t *tag, const wchar_t *group)
+HRESULT DesktopNotificationHistoryCompat::RemoveGroupedTag(const wchar_t *tag, const wchar_t *group)
 {
     if (m_aumid.empty())
     {

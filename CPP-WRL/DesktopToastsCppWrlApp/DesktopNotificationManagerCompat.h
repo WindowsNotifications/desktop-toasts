@@ -89,7 +89,7 @@ public:
     /// </summary>
     /// <param name="tag">The tag label of the toast notification to be removed.</param>
     /// <param name="group">The group label of the toast notification to be removed.</param>
-    HRESULT Remove(const wchar_t *tag, const wchar_t *group);
+    HRESULT RemoveGroupedTag(const wchar_t *tag, const wchar_t *group);
 
     /// <summary>
     /// Removes a group of toast notifications, identified by the specified group label, from action center.
