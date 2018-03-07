@@ -101,7 +101,7 @@ namespace DesktopNotificationManagerCompat
 
     HRESULT CreateToastNotifier(IToastNotifier **notifier)
     {
-        EnsureRegistered();
+        RETURN_IF_FAILED(EnsureRegistered());
 
         ComPtr<IToastNotificationManagerStatics> toastStatics;
         RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(
@@ -147,7 +147,7 @@ namespace DesktopNotificationManagerCompat
 
     HRESULT get_History(std::unique_ptr<DesktopNotificationHistoryCompat>* history)
     {
-        EnsureRegistered();
+        RETURN_IF_FAILED(EnsureRegistered());
 
         ComPtr<IToastNotificationManagerStatics> toastStatics;
         RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(
