@@ -78,24 +78,22 @@ namespace DesktopNotificationManagerCompat
         // Create the subkey
         // Something like SOFTWARE\Classes\CLSID\{23A5B06E-20BB-4E7E-A0AC-6982ED6A6041}\LocalServer32
         std::wstring subKeyStr = LR"(SOFTWARE\Classes\CLSID\)" + clsidStr + LR"(\LocalServer32)";
-        LPCWSTR subKey = subKeyStr.c_str();
 
         // Include -ToastActivated launch args on the exe
         std::wstring exePathStr(exePath);
         exePathStr = L"\"" + exePathStr + L"\" " + TOAST_ACTIVATED_LAUNCH_ARG;
-        exePath = exePathStr.c_str();
 
         // We don't need to worry about overflow here as ::GetModuleFileName won't
         // return anything bigger than the max file system path (much fewer than max of DWORD).
-        DWORD dataSize = static_cast<DWORD>((::wcslen(exePath) + 1) * sizeof(WCHAR));
+        DWORD dataSize = static_cast<DWORD>((exePathStr.length() + 1) * sizeof(WCHAR));
 
         // Register the EXE for the COM server
         return HRESULT_FROM_WIN32(::RegSetKeyValue(
             HKEY_CURRENT_USER,
-            subKey,
+            subKeyStr.c_str(),
             nullptr,
             REG_SZ,
-            reinterpret_cast<const BYTE*>(exePath),
+            reinterpret_cast<const BYTE*>(exePathStr.c_str()),
             dataSize));
     }
 
