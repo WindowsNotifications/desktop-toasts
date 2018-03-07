@@ -77,7 +77,7 @@ namespace DesktopNotificationManagerCompat
 
         // Create the subkey
         // Something like SOFTWARE\Classes\CLSID\{23A5B06E-20BB-4E7E-A0AC-6982ED6A6041}\LocalServer32
-        std::wstring subKeyStr = LR"(SOFTWARE\Classes\CLSID\)" + clsidStr + LR"(\LocalServer32)";
+        std::wstring subKey = LR"(SOFTWARE\Classes\CLSID\)" + clsidStr + LR"(\LocalServer32)";
 
         // Include -ToastActivated launch args on the exe
         std::wstring exePathStr(exePath);
@@ -90,7 +90,7 @@ namespace DesktopNotificationManagerCompat
         // Register the EXE for the COM server
         return HRESULT_FROM_WIN32(::RegSetKeyValue(
             HKEY_CURRENT_USER,
-            subKeyStr.c_str(),
+            subKey.c_str(),
             nullptr,
             REG_SZ,
             reinterpret_cast<const BYTE*>(exePathStr.c_str()),
