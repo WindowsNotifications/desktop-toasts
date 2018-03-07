@@ -56,10 +56,11 @@
 
             <!--Specify which CLSID to activate when toast clicked-->
             <desktop:Extension Category="windows.toastNotificationActivation">
-                <desktop:ToastNotificationActivation ToastActivatorCLSID="23A5B06E-20BB-4E7E-A0AC-6982ED6A6041"/>
+                <desktop:ToastNotificationActivation ToastActivatorCLSID="23A5B06E-20BB-4E7E-A0AC-6982ED6A6041" />
             </desktop:Extension>
 
         </Extensions>
+
     </Application>
   </Applications>
 
