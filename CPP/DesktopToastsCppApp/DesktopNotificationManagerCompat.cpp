@@ -2,7 +2,7 @@
 #include <appmodel.h>
 #include <wrl\wrappers\corewrappers.h>
 
-#define THROW_IF_FAILED(hr) if (FAILED(hr)) { throw hr; }
+#define RETURN_IF_FAILED(hr) if (FAILED(hr)) { return hr; }
 
 using namespace ABI::Windows::Data::Xml::Dom;
 using namespace Microsoft::WRL;
@@ -10,8 +10,8 @@ using namespace Microsoft::WRL::Wrappers;
 
 namespace DesktopNotificationManagerCompat
 {
-    void RegisterComServer(GUID clsid, const wchar_t exePath[]);
-    void EnsureRegistered();
+    HRESULT RegisterComServer(GUID clsid, const wchar_t exePath[]);
+    HRESULT EnsureRegistered();
     bool IsRunningAsUwp();
 
     bool s_registeredAumidAndComServer = false;
@@ -20,7 +20,7 @@ namespace DesktopNotificationManagerCompat
     bool s_hasCheckedIsRunningAsUwp = false;
     bool s_isRunningAsUwp = false;
 
-    void RegisterAumidAndComServer(const wchar_t *aumid, GUID clsid)
+    HRESULT RegisterAumidAndComServer(const wchar_t *aumid, GUID clsid)
     {
         // If running as Desktop Bridge
         if (IsRunningAsUwp())
@@ -30,7 +30,7 @@ namespace DesktopNotificationManagerCompat
             // Their LocalServer32 key is also registered through their manifest.
             s_aumid = L"";
             s_registeredAumidAndComServer = true;
-            return;
+            return S_OK;
         }
 
         // Copy the aumid
@@ -39,14 +39,16 @@ namespace DesktopNotificationManagerCompat
         // Get the EXE path
         wchar_t exePath[MAX_PATH];
         DWORD charWritten = ::GetModuleFileName(nullptr, exePath, ARRAYSIZE(exePath));
-        THROW_IF_FAILED(charWritten > 0 ? S_OK : HRESULT_FROM_WIN32(::GetLastError()));
+        RETURN_IF_FAILED(charWritten > 0 ? S_OK : HRESULT_FROM_WIN32(::GetLastError()));
 
         // Register the COM server
-        RegisterComServer(clsid, exePath);
+        RETURN_IF_FAILED(RegisterComServer(clsid, exePath));
+
         s_registeredAumidAndComServer = true;
+        return S_OK;
     }
 
-    void RegisterActivator()
+    HRESULT RegisterActivator()
     {
         // Module<OutOfProc> needs a callback registered before it can be used.
         // Since we don't care about when it shuts down, we'll pass an empty lambda here.
@@ -59,12 +61,13 @@ namespace DesktopNotificationManagerCompat
         // we aren't done yet.
         Module<OutOfProc>::GetModule().IncrementObjectCount();
 
-        THROW_IF_FAILED(Module<OutOfProc>::GetModule().RegisterObjects());
+        RETURN_IF_FAILED(Module<OutOfProc>::GetModule().RegisterObjects());
 
         s_registeredActivator = true;
+        return S_OK;
     }
 
-    void RegisterComServer(GUID clsid, const wchar_t exePath[])
+    HRESULT RegisterComServer(GUID clsid, const wchar_t exePath[])
     {
         // Turn the GUID into a string
         OLECHAR* clsidOlechar;
@@ -87,83 +90,78 @@ namespace DesktopNotificationManagerCompat
         DWORD dataSize = static_cast<DWORD>((::wcslen(exePath) + 1) * sizeof(WCHAR));
 
         // Register the EXE for the COM server
-        THROW_IF_FAILED(HRESULT_FROM_WIN32(::RegSetKeyValue(
+        return HRESULT_FROM_WIN32(::RegSetKeyValue(
             HKEY_CURRENT_USER,
             subKey,
             nullptr,
             REG_SZ,
             reinterpret_cast<const BYTE*>(exePath),
-            dataSize)));
+            dataSize));
     }
 
-    ComPtr<IToastNotifier> CreateToastNotifier()
+    HRESULT CreateToastNotifier(IToastNotifier **notifier)
     {
         EnsureRegistered();
 
         ComPtr<IToastNotificationManagerStatics> toastStatics;
-        THROW_IF_FAILED(Windows::Foundation::GetActivationFactory(
+        RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(
             HStringReference(RuntimeClass_Windows_UI_Notifications_ToastNotificationManager).Get(),
             &toastStatics));
 
-        ComPtr<IToastNotifier> notifier;
         if (s_aumid.empty())
         {
-            THROW_IF_FAILED(toastStatics->CreateToastNotifier(&notifier));
+            return toastStatics->CreateToastNotifier(notifier);
         }
         else
         {
-            THROW_IF_FAILED(toastStatics->CreateToastNotifierWithId(HStringReference(s_aumid.c_str()).Get(), &notifier));
+            return toastStatics->CreateToastNotifierWithId(HStringReference(s_aumid.c_str()).Get(), notifier);
         }
-
-        return notifier;
     }
 
-    ComPtr<IToastNotification> CreateToastNotification(IXmlDocument *content)
+    HRESULT CreateToastNotification(IXmlDocument *content, IToastNotification **notification)
     {
         ComPtr<IToastNotificationFactory> factory;
-        THROW_IF_FAILED(Windows::Foundation::GetActivationFactory(
+        RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(
             HStringReference(RuntimeClass_Windows_UI_Notifications_ToastNotification).Get(),
             &factory));
 
-        ComPtr<IToastNotification> notification;
-        THROW_IF_FAILED(factory->CreateToastNotification(content, &notification));
-
-        return notification;
+        return factory->CreateToastNotification(content, notification);
     }
 
-    ComPtr<IXmlDocument> CreateXmlDocumentFromString(const wchar_t *xmlString)
+    HRESULT CreateXmlDocumentFromString(const wchar_t *xmlString, IXmlDocument **doc)
     {
         ComPtr<IInspectable> docInspectable;
-        THROW_IF_FAILED(RoActivateInstance(HStringReference(RuntimeClass_Windows_Data_Xml_Dom_XmlDocument).Get(), docInspectable.ReleaseAndGetAddressOf()));
+        RETURN_IF_FAILED(RoActivateInstance(HStringReference(RuntimeClass_Windows_Data_Xml_Dom_XmlDocument).Get(), docInspectable.ReleaseAndGetAddressOf()));
 
-        ComPtr<IXmlDocument> doc;
-        THROW_IF_FAILED(docInspectable.As(&doc));
+        ComPtr<IXmlDocument> answer;
+        RETURN_IF_FAILED(docInspectable.As(&answer));
 
         ComPtr<IXmlDocumentIO> docIO;
-        THROW_IF_FAILED(doc.As(&docIO));
+        RETURN_IF_FAILED(answer.As(&docIO));
 
         // Load the XML string
-        THROW_IF_FAILED(docIO->LoadXml(HStringReference(xmlString).Get()));
+        RETURN_IF_FAILED(docIO->LoadXml(HStringReference(xmlString).Get()));
 
-        return doc;
+        return answer.CopyTo(doc);
     }
 
-    std::unique_ptr<DesktopNotificationHistoryCompat> get_History()
+    HRESULT get_History(std::unique_ptr<DesktopNotificationHistoryCompat>* history)
     {
         EnsureRegistered();
 
         ComPtr<IToastNotificationManagerStatics> toastStatics;
-        THROW_IF_FAILED(Windows::Foundation::GetActivationFactory(
+        RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(
             HStringReference(RuntimeClass_Windows_UI_Notifications_ToastNotificationManager).Get(),
             &toastStatics));
 
         ComPtr<IToastNotificationManagerStatics2> toastStatics2;
-        THROW_IF_FAILED(toastStatics.As(&toastStatics2));
+        RETURN_IF_FAILED(toastStatics.As(&toastStatics2));
 
-        ComPtr<IToastNotificationHistory> history;
-        THROW_IF_FAILED(toastStatics2->get_History(&history));
+        ComPtr<IToastNotificationHistory> nativeHistory;
+        RETURN_IF_FAILED(toastStatics2->get_History(&nativeHistory));
 
-        return std::unique_ptr<DesktopNotificationHistoryCompat>(new DesktopNotificationHistoryCompat(s_aumid.c_str(), history));
+        *history = std::unique_ptr<DesktopNotificationHistoryCompat>(new DesktopNotificationHistoryCompat(s_aumid.c_str(), nativeHistory));
+        return S_OK;
     }
 
     bool CanUseHttpImages()
@@ -171,7 +169,7 @@ namespace DesktopNotificationManagerCompat
         return IsRunningAsUwp();
     }
 
-    void EnsureRegistered()
+    HRESULT EnsureRegistered()
     {
         // If not registered AUMID yet
         if (!s_registeredAumidAndComServer)
@@ -184,17 +182,19 @@ namespace DesktopNotificationManagerCompat
             }
             else
             {
-                // Otherwise, incorrect usage
-                throw std::exception("You must call RegisterAumidAndComServer first.");
+                // Otherwise, incorrect usage, must call RegisterAumidAndComServer first
+                return E_ILLEGAL_METHOD_CALL;
             }
         }
 
         // If not registered activator yet
         if (!s_registeredActivator)
         {
-            // Incorrect usage
-            throw std::exception("You must call RegisterActivator first.");
+            // Incorrect usage, must call RegisterActivator first
+            return E_ILLEGAL_METHOD_CALL;
         }
+
+        return S_OK;
     }
 
     bool IsRunningAsUwp()
@@ -219,70 +219,66 @@ DesktopNotificationHistoryCompat::DesktopNotificationHistoryCompat(const wchar_t
     m_history = history;
 }
 
-void DesktopNotificationHistoryCompat::Clear()
+HRESULT DesktopNotificationHistoryCompat::Clear()
 {
     if (m_aumid.empty())
     {
-        THROW_IF_FAILED(m_history->Clear());
+        return m_history->Clear();
     }
     else
     {
-        THROW_IF_FAILED(m_history->ClearWithId(HStringReference(m_aumid.c_str()).Get()));
+        return m_history->ClearWithId(HStringReference(m_aumid.c_str()).Get());
     }
 }
 
-ComPtr<ABI::Windows::Foundation::Collections::IVectorView<ToastNotification*>> DesktopNotificationHistoryCompat::GetHistory()
+HRESULT DesktopNotificationHistoryCompat::GetHistory(ABI::Windows::Foundation::Collections::IVectorView<ToastNotification*> **toasts)
 {
     ComPtr<IToastNotificationHistory> history(m_history);
     ComPtr<IToastNotificationHistory2> history2;
-    THROW_IF_FAILED(history.As(&history2));
-
-    ComPtr<ABI::Windows::Foundation::Collections::IVectorView<ToastNotification*>> toasts;
+    RETURN_IF_FAILED(history.As(&history2));
 
     if (m_aumid.empty())
     {
-        THROW_IF_FAILED(history2->GetHistory(&toasts));
+        return history2->GetHistory(toasts);
     }
     else
     {
-        THROW_IF_FAILED(history2->GetHistoryWithId(HStringReference(m_aumid.c_str()).Get(), &toasts));
-    }
-
-    return toasts;
-}
-
-void DesktopNotificationHistoryCompat::Remove(const wchar_t *tag)
-{
-    if (m_aumid.empty())
-    {
-        THROW_IF_FAILED(m_history->Remove(HStringReference(tag).Get()));
-    }
-    else
-    {
-        THROW_IF_FAILED(m_history->RemoveGroupedTagWithId(HStringReference(tag).Get(), HStringReference(L"").Get(), HStringReference(m_aumid.c_str()).Get()));
+        return history2->GetHistoryWithId(HStringReference(m_aumid.c_str()).Get(), toasts);
     }
 }
 
-void DesktopNotificationHistoryCompat::Remove(const wchar_t *tag, const wchar_t *group)
+HRESULT DesktopNotificationHistoryCompat::Remove(const wchar_t *tag)
 {
     if (m_aumid.empty())
     {
-        THROW_IF_FAILED(m_history->RemoveGroupedTag(HStringReference(tag).Get(), HStringReference(group).Get()));
+        return m_history->Remove(HStringReference(tag).Get());
     }
     else
     {
-        THROW_IF_FAILED(m_history->RemoveGroupedTagWithId(HStringReference(tag).Get(), HStringReference(group).Get(), HStringReference(m_aumid.c_str()).Get()));
+        return m_history->RemoveGroupedTagWithId(HStringReference(tag).Get(), HStringReference(L"").Get(), HStringReference(m_aumid.c_str()).Get());
     }
 }
 
-void DesktopNotificationHistoryCompat::RemoveGroup(const wchar_t *group)
+HRESULT DesktopNotificationHistoryCompat::Remove(const wchar_t *tag, const wchar_t *group)
 {
     if (m_aumid.empty())
     {
-        THROW_IF_FAILED(m_history->RemoveGroup(HStringReference(group).Get()));
+        return m_history->RemoveGroupedTag(HStringReference(tag).Get(), HStringReference(group).Get());
     }
     else
     {
-        THROW_IF_FAILED(m_history->RemoveGroupWithId(HStringReference(group).Get(), HStringReference(m_aumid.c_str()).Get()));
+        return m_history->RemoveGroupedTagWithId(HStringReference(tag).Get(), HStringReference(group).Get(), HStringReference(m_aumid.c_str()).Get());
+    }
+}
+
+HRESULT DesktopNotificationHistoryCompat::RemoveGroup(const wchar_t *group)
+{
+    if (m_aumid.empty())
+    {
+        return m_history->RemoveGroup(HStringReference(group).Get());
+    }
+    else
+    {
+        return m_history->RemoveGroupWithId(HStringReference(group).Get(), HStringReference(m_aumid.c_str()).Get());
     }
 }

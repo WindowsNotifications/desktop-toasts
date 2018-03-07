@@ -31,32 +31,32 @@ namespace DesktopNotificationManagerCompat
     /// </summary>
     /// <param name="aumid">An AUMID that uniquely identifies your application.</param>
     /// <param name="clsid">The CLSID of your NotificationActivator class.</param>
-    void RegisterAumidAndComServer(const wchar_t *aumid, GUID clsid);
+    HRESULT RegisterAumidAndComServer(const wchar_t *aumid, GUID clsid);
 
     /// <summary>
     /// Registers your module to handle COM activations. Call this upon application startup.
     /// </summary>
-    void RegisterActivator();
+    HRESULT RegisterActivator();
 
     /// <summary>
     /// Creates a toast notifier. You must have called RegisterActivator first (and also RegisterAumidAndComServer if you're a classic Win32 app), or this will throw an exception.
     /// </summary>
-    Microsoft::WRL::ComPtr<IToastNotifier> CreateToastNotifier();
+    HRESULT CreateToastNotifier(IToastNotifier** notifier);
 
     /// <summary>
     /// Creates a toast notification. This is simply a convenience helper method.
     /// </summary>
-    Microsoft::WRL::ComPtr<IToastNotification> CreateToastNotification(ABI::Windows::Data::Xml::Dom::IXmlDocument* content);
+    HRESULT CreateToastNotification(ABI::Windows::Data::Xml::Dom::IXmlDocument* content, IToastNotification** notification);
 
     /// <summary>
     /// Creates an XmlDocument initialized with the specified string. This is simply a convenience helper method.
     /// </summary>
-    Microsoft::WRL::ComPtr<ABI::Windows::Data::Xml::Dom::IXmlDocument> CreateXmlDocumentFromString(const wchar_t *xmlString);
+    HRESULT CreateXmlDocumentFromString(const wchar_t *xmlString, ABI::Windows::Data::Xml::Dom::IXmlDocument** doc);
 
     /// <summary>
     /// Gets the DesktopNotificationHistoryCompat object. You must have called RegisterActivator first (and also RegisterAumidAndComServer if you're a classic Win32 app), or this will throw an exception.
     /// </summary>
-    std::unique_ptr<DesktopNotificationHistoryCompat> get_History();
+    HRESULT get_History(std::unique_ptr<DesktopNotificationHistoryCompat>* history);
 
     /// <summary>
     /// Gets a boolean representing whether http images can be used within toasts. This is true if running under Desktop Bridge.
@@ -71,31 +71,31 @@ public:
     /// <summary>
     /// Removes all notifications sent by this app from action center.
     /// </summary>
-    void Clear();
+    HRESULT Clear();
 
     /// <summary>
     /// Gets all notifications sent by this app that are currently still in Action Center.
     /// </summary>
-    Microsoft::WRL::ComPtr<ABI::Windows::Foundation::Collections::IVectorView<ToastNotification*>> GetHistory();
+    HRESULT GetHistory(ABI::Windows::Foundation::Collections::IVectorView<ToastNotification*>** history);
 
     /// <summary>
     /// Removes an individual toast, with the specified tag label, from action center.
     /// </summary>
     /// <param name="tag">The tag label of the toast notification to be removed.</param>
-    void Remove(const wchar_t *tag);
+    HRESULT Remove(const wchar_t *tag);
 
     /// <summary>
     /// Removes a toast notification from the action using the notification's tag and group labels.
     /// </summary>
     /// <param name="tag">The tag label of the toast notification to be removed.</param>
     /// <param name="group">The group label of the toast notification to be removed.</param>
-    void Remove(const wchar_t *tag, const wchar_t *group);
+    HRESULT Remove(const wchar_t *tag, const wchar_t *group);
 
     /// <summary>
     /// Removes a group of toast notifications, identified by the specified group label, from action center.
     /// </summary>
     /// <param name="group">The group label of the toast notifications to be removed.</param>
-    void RemoveGroup(const wchar_t *group);
+    HRESULT RemoveGroup(const wchar_t *group);
 
     /// <summary>
     /// Do not call this. Instead, call DesktopNotificationManagerCompat.get_History() to obtain an instance.

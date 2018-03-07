@@ -7,7 +7,7 @@
 #include <wrl.h>
 #include <wrl\wrappers\corewrappers.h>
 
-#define THROW_IF_FAILED(hr) if (FAILED(hr)) { throw hr; }
+#define RETURN_IF_FAILED(hr) if (FAILED(hr)) { return hr; }
 
 using namespace ABI::Windows::Data::Xml::Dom;
 using namespace ABI::Windows::UI::Notifications;
@@ -24,14 +24,14 @@ public:
         return s_currentInstance;
     }
 
-    static void DesktopToastsApp::SendBasicToast(
+    static HRESULT DesktopToastsApp::SendBasicToast(
         _In_ PCWSTR message
     );
 
     DesktopToastsApp();
     ~DesktopToastsApp();
-    void Initialize(_In_ HINSTANCE hInstance);
-    void OpenWindowIfNeeded();
+    HRESULT Initialize(_In_ HINSTANCE hInstance);
+    HRESULT OpenWindowIfNeeded();
     bool HasWindow();
     void RunMessageLoop();
     void SetMessage(PCWSTR message);
@@ -50,24 +50,24 @@ private:
         _In_ LPARAM lParam
         );
 
-    void DisplayToast();
-    void ClearToasts();
+    HRESULT DisplayToast();
+    HRESULT ClearToasts();
 
-    Microsoft::WRL::ComPtr<ABI::Windows::Data::Xml::Dom::IXmlDocument> CreateToastXml();
+    HRESULT CreateToastXml(IXmlDocument **toastXml);
 
-    static void ShowToast(
+    static HRESULT ShowToast(
         _In_ ABI::Windows::Data::Xml::Dom::IXmlDocument* xml
         );
-    static void DesktopToastsApp::SetImageSrc(
+    static HRESULT DesktopToastsApp::SetImageSrc(
         _In_ PCWSTR imagePath,
         _In_ ABI::Windows::Data::Xml::Dom::IXmlDocument* toastXml
         );
-    static void DesktopToastsApp::SetTextValues(
+    static HRESULT DesktopToastsApp::SetTextValues(
         _In_reads_(textValuesCount) const PCWSTR* textValues,
         _In_ UINT32 textValuesCount,
         _Inout_ ABI::Windows::Data::Xml::Dom::IXmlDocument* toastXml
         );
-    static void DesktopToastsApp::SetNodeValueString(
+    static HRESULT DesktopToastsApp::SetNodeValueString(
         _In_ HSTRING onputString,
         _Inout_ ABI::Windows::Data::Xml::Dom::IXmlNode* node,
         _In_ ABI::Windows::Data::Xml::Dom::IXmlDocument* xml
@@ -100,31 +100,31 @@ public:
         _In_reads_(dataCount) const NOTIFICATION_USER_INPUT_DATA* data,
         ULONG dataCount) override
     {
-        try
+        std::wstring arguments(invokedArgs);
+        HRESULT hr;
+
+        // Background: Quick reply to the conversation
+        if (arguments.find(L"action=reply") == 0)
         {
-            std::wstring arguments(invokedArgs);
+            // Get the response user typed (we know this is first and only user input since our toasts only have one input)
+            LPCWSTR response = data[0].Value;
 
-            // Background: Quick reply to the conversation
-            if (arguments.find(L"action=reply") == 0)
+            hr = DesktopToastsApp::SendBasicToast(response);
+        }
+
+        // Background: Send a like
+        else if (arguments.find(L"action=like") == 0)
+        {
+            hr = DesktopToastsApp::SendBasicToast(L"Sending like...");
+        }
+
+        else
+        {
+            // The remaining scenarios are foreground activations,
+            // so we first make sure we have a window open and in foreground
+            hr = DesktopToastsApp::GetInstance()->OpenWindowIfNeeded();
+            if (SUCCEEDED(hr))
             {
-                // Get the response user typed (we know this is first and only user input since our toasts only have one input)
-                LPCWSTR response = data[0].Value;
-
-                DesktopToastsApp::SendBasicToast(response);
-            }
-
-            // Background: Send a like
-            else if (arguments.find(L"action=like") == 0)
-            {
-                DesktopToastsApp::SendBasicToast(L"Sending like...");
-            }
-
-            else
-            {
-                // The remaining scenarios are foreground activations,
-                // so we first make sure we have a window open and in foreground
-                DesktopToastsApp::GetInstance()->OpenWindowIfNeeded();
-
                 // Open the image
                 if (arguments.find(L"action=viewImage") == 0)
                 {
@@ -144,8 +144,10 @@ public:
                 }
             }
         }
-        catch (...)
+
+        if (FAILED(hr))
         {
+            // Log failed HRESULT
         }
 
         return S_OK;
@@ -167,47 +169,40 @@ CoCreatableClass(NotificationActivator);
 // Main function
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPWSTR cmdLineArgs, _In_ int)
 {
-    try
+    RoInitializeWrapper winRtInitializer(RO_INIT_MULTITHREADED);
+
+    RETURN_IF_FAILED(winRtInitializer);
+
+    // Register AUMID and COM server (for Desktop Bridge apps, this no-ops)
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::RegisterAumidAndComServer(L"WindowsNotifications.DesktopToastsCpp", __uuidof(NotificationActivator)));
+
+    // Register activator type
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::RegisterActivator());
+
+    // Create our desktop app
+    DesktopToastsApp app;
+    app.SetHInstance(hInstance);
+
+    std::wstring cmdLineArgsStr(cmdLineArgs);
+
+    // If launched from toast
+    if (cmdLineArgsStr.find(TOAST_ACTIVATED_LAUNCH_ARG) != std::string::npos)
     {
-        RoInitializeWrapper winRtInitializer(RO_INIT_MULTITHREADED);
-
-        THROW_IF_FAILED(winRtInitializer);
-
-        // Register AUMID and COM server (for Desktop Bridge apps, this no-ops)
-        DesktopNotificationManagerCompat::RegisterAumidAndComServer(L"WindowsNotifications.DesktopToastsCpp", __uuidof(NotificationActivator));
-
-        // Register activator type
-        DesktopNotificationManagerCompat::RegisterActivator();
-
-        // Create our desktop app
-        DesktopToastsApp app;
-        app.SetHInstance(hInstance);
-
-        std::wstring cmdLineArgsStr(cmdLineArgs);
-
-        // If launched from toast
-        if (cmdLineArgsStr.find(TOAST_ACTIVATED_LAUNCH_ARG) != std::string::npos)
-        {
-            // Let our NotificationActivator handle activation
-        }
-
-        else
-        {
-            // Otherwise launch like normal
-            app.Initialize(hInstance);
-        }
-
-        app.RunMessageLoop();
-
-        return 0;
+        // Let our NotificationActivator handle activation
     }
-    catch (...)
+
+    else
     {
-        return E_FAIL;
+        // Otherwise launch like normal
+        RETURN_IF_FAILED(app.Initialize(hInstance));
     }
+
+    app.RunMessageLoop();
+
+    return 0;
 }
 
-void DesktopToastsApp::OpenWindowIfNeeded()
+HRESULT DesktopToastsApp::OpenWindowIfNeeded()
 {
     // If no window exists
     if (m_hwnd == nullptr)
@@ -219,11 +214,12 @@ void DesktopToastsApp::OpenWindowIfNeeded()
             HANDLE h = CreateEvent(NULL, 0, 0, NULL);
             PostThreadMessage(m_threadId, DesktopToastsApp::WM_USER_OPENWINDOWIFNEEDED, NULL, (LPARAM)h);
             WaitForSingleObject(h, INFINITE);
+            return S_OK;
         }
         else
         {
             // Otherwise, create the window
-            Initialize(m_hInstance);
+            return Initialize(m_hInstance);
         }
     }
     else
@@ -231,6 +227,7 @@ void DesktopToastsApp::OpenWindowIfNeeded()
         // Otherwise, ensure window is unminimized and in the foreground
         ::ShowWindow(m_hwnd, SW_RESTORE);
         ::SetForegroundWindow(m_hwnd);
+        return S_OK;
     }
 }
 
@@ -252,7 +249,7 @@ DesktopToastsApp::~DesktopToastsApp()
 
 // Prepare the main window
 _Use_decl_annotations_
-void DesktopToastsApp::Initialize(HINSTANCE hInstance)
+HRESULT DesktopToastsApp::Initialize(HINSTANCE hInstance)
 {
     WNDCLASSEX wcex = { sizeof(wcex) };
     // Register window class
@@ -278,7 +275,7 @@ void DesktopToastsApp::Initialize(HINSTANCE hInstance)
 
     if (!m_hwnd)
     {
-        throw E_FAIL;
+        return E_FAIL;
     }
 
     ::CreateWindow(
@@ -306,6 +303,7 @@ void DesktopToastsApp::Initialize(HINSTANCE hInstance)
     ::ShowWindow(m_hwnd, SW_SHOWNORMAL);
     ::UpdateWindow(m_hwnd);
     ::SetForegroundWindow(m_hwnd);
+    return S_OK;
 }
 
 // Standard message loop
@@ -334,27 +332,22 @@ void DesktopToastsApp::SetMessage(PCWSTR message)
 
 // Display the toast using classic COM. Note that is also possible to create and
 // display the toast using the new C++ /ZW options (using handles, COM wrappers, etc.)
-void DesktopToastsApp::DisplayToast()
+HRESULT DesktopToastsApp::DisplayToast()
 {
-    try
-    {
-        // Create the toast content
-        ComPtr<IXmlDocument> toastXml = CreateToastXml();
+    // Create the toast content
+    ComPtr<IXmlDocument> toastXml;
+    RETURN_IF_FAILED(CreateToastXml(&toastXml));
 
-        // And show it
-        ShowToast(toastXml.Get());
-    }
-    catch (...)
-    {
-        DesktopToastsApp::GetInstance()->SetMessage(L"Exception occurred");
-    }
+    // And show it
+    return ShowToast(toastXml.Get());
 }
 
 // Create the toast XML from a template
 _Use_decl_annotations_
-ComPtr<IXmlDocument> DesktopToastsApp::CreateToastXml()
+HRESULT DesktopToastsApp::CreateToastXml(IXmlDocument **toastXml)
 {
-    ComPtr<IXmlDocument> doc = DesktopNotificationManagerCompat::CreateXmlDocumentFromString(LR"(<toast launch="action=viewConversation&amp;conversationId=5">
+    ComPtr<IXmlDocument> doc;
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::CreateXmlDocumentFromString(LR"(<toast launch="action=viewConversation&amp;conversationId=5">
     <visual>
         <binding template="ToastGeneric">
             <text></text>
@@ -367,7 +360,7 @@ ComPtr<IXmlDocument> DesktopToastsApp::CreateToastXml()
         <action content="Like" arguments="action=like&amp;conversationId=5"/>
         <action content="View" arguments="action=viewImage&amp;imageUrl=https://picsum.photos/364/202?image=883"/>
     </actions>
-</toast>)");
+</toast>)", &doc));
 
     PCWSTR textValues[] = {
         L"Andrew sent you a picture",
@@ -375,99 +368,100 @@ ComPtr<IXmlDocument> DesktopToastsApp::CreateToastXml()
     };
     SetTextValues(textValues, ARRAYSIZE(textValues), doc.Get());
 
-    return doc;
+    return doc.CopyTo(toastXml);
 }
 
 // Set the value of the "src" attribute of the "image" node
 _Use_decl_annotations_
-void DesktopToastsApp::SetImageSrc(PCWSTR imagePath, IXmlDocument* toastXml)
+HRESULT DesktopToastsApp::SetImageSrc(PCWSTR imagePath, IXmlDocument* toastXml)
 {
     wchar_t imageSrcUri[MAX_PATH];
     DWORD size = ARRAYSIZE(imageSrcUri);
 
-    THROW_IF_FAILED(::UrlCreateFromPath(imagePath, imageSrcUri, &size, 0));
+    RETURN_IF_FAILED(::UrlCreateFromPath(imagePath, imageSrcUri, &size, 0));
 
     ComPtr<IXmlNodeList> nodeList;
-    THROW_IF_FAILED(toastXml->GetElementsByTagName(HStringReference(L"image").Get(), &nodeList));
+    RETURN_IF_FAILED(toastXml->GetElementsByTagName(HStringReference(L"image").Get(), &nodeList));
 
     ComPtr<IXmlNode> imageNode;
-    THROW_IF_FAILED(nodeList->Item(0, &imageNode));
+    RETURN_IF_FAILED(nodeList->Item(0, &imageNode));
 
     ComPtr<IXmlNamedNodeMap> attributes;
 
-    THROW_IF_FAILED(imageNode->get_Attributes(&attributes));
+    RETURN_IF_FAILED(imageNode->get_Attributes(&attributes));
 
     ComPtr<IXmlNode> srcAttribute;
-    THROW_IF_FAILED(attributes->GetNamedItem(HStringReference(L"src").Get(), &srcAttribute));
+    RETURN_IF_FAILED(attributes->GetNamedItem(HStringReference(L"src").Get(), &srcAttribute));
 
-    SetNodeValueString(HStringReference(imageSrcUri).Get(), srcAttribute.Get(), toastXml);
+    return SetNodeValueString(HStringReference(imageSrcUri).Get(), srcAttribute.Get(), toastXml);
 }
 
 // Set the values of each of the text nodes
 _Use_decl_annotations_
-void DesktopToastsApp::SetTextValues(const PCWSTR* textValues, UINT32 textValuesCount, IXmlDocument* toastXml)
+HRESULT DesktopToastsApp::SetTextValues(const PCWSTR* textValues, UINT32 textValuesCount, IXmlDocument* toastXml)
 {
     ComPtr<IXmlNodeList> nodeList;
-    THROW_IF_FAILED(toastXml->GetElementsByTagName(HStringReference(L"text").Get(), &nodeList));
+    RETURN_IF_FAILED(toastXml->GetElementsByTagName(HStringReference(L"text").Get(), &nodeList));
 
     UINT32 nodeListLength;
-    THROW_IF_FAILED(nodeList->get_Length(&nodeListLength));
+    RETURN_IF_FAILED(nodeList->get_Length(&nodeListLength));
 
     // If a template was chosen with fewer text elements, also change the amount of strings
     // passed to this method.
-    THROW_IF_FAILED(textValuesCount <= nodeListLength ? S_OK : E_INVALIDARG);
+    RETURN_IF_FAILED(textValuesCount <= nodeListLength ? S_OK : E_INVALIDARG);
 
     for (UINT32 i = 0; i < textValuesCount; i++)
     {
         ComPtr<IXmlNode> textNode;
-        THROW_IF_FAILED(nodeList->Item(i, &textNode));
+        RETURN_IF_FAILED(nodeList->Item(i, &textNode));
 
-        SetNodeValueString(HStringReference(textValues[i]).Get(), textNode.Get(), toastXml);
+        RETURN_IF_FAILED(SetNodeValueString(HStringReference(textValues[i]).Get(), textNode.Get(), toastXml));
     }
+
+    return S_OK;
 }
 
 _Use_decl_annotations_
-void DesktopToastsApp::SetNodeValueString(HSTRING inputString, IXmlNode* node, IXmlDocument* xml)
+HRESULT DesktopToastsApp::SetNodeValueString(HSTRING inputString, IXmlNode* node, IXmlDocument* xml)
 {
     ComPtr<IXmlText> inputText;
-    THROW_IF_FAILED(xml->CreateTextNode(inputString, &inputText));
+    RETURN_IF_FAILED(xml->CreateTextNode(inputString, &inputText));
 
     ComPtr<IXmlNode> inputTextNode;
-    THROW_IF_FAILED(inputText.As(&inputTextNode));
+    RETURN_IF_FAILED(inputText.As(&inputTextNode));
 
     ComPtr<IXmlNode> appendedChild;
-    THROW_IF_FAILED(node->AppendChild(inputTextNode.Get(), &appendedChild));
+    return node->AppendChild(inputTextNode.Get(), &appendedChild);
 }
 
 // Create and display the toast
 _Use_decl_annotations_
-void DesktopToastsApp::ShowToast(IXmlDocument* xml)
+HRESULT DesktopToastsApp::ShowToast(IXmlDocument* xml)
 {
     // Create the notifier
     // Classic Win32 apps MUST use the compat method to create the notifier
-    ComPtr<IToastNotifier> notifier = DesktopNotificationManagerCompat::CreateToastNotifier();
+    ComPtr<IToastNotifier> notifier;
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::CreateToastNotifier(&notifier));
 
     // And create the notification itself
-    ComPtr<IToastNotification> toast = DesktopNotificationManagerCompat::CreateToastNotification(xml);
+    ComPtr<IToastNotification> toast;
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::CreateToastNotification(xml, &toast));
 
     // And show it!
-    THROW_IF_FAILED(notifier->Show(toast.Get()));
+    return notifier->Show(toast.Get());
 }
 
 // Clear all toasts
 _Use_decl_annotations_
-void DesktopToastsApp::ClearToasts()
+HRESULT DesktopToastsApp::ClearToasts()
 {
-    try
-    {
-        // Clear all toasts
-        // Classic Win32 apps MUST use the compat method to obtain history
-        DesktopNotificationManagerCompat::get_History()->Clear();
-    }
-    catch (...)
-    {
-        DesktopToastsApp::GetInstance()->SetMessage(L"Exception occurred");
-    }
+    // Get the history object
+    // Classic Win32 apps MUST use the compat method to obtain history
+    std::unique_ptr<DesktopNotificationHistoryCompat> history;
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::get_History(&history));
+
+    // And clear the toasts
+    return history->Clear();
 }
 
 // Standard window procedure
@@ -523,20 +517,21 @@ LRESULT CALLBACK DesktopToastsApp::WndProc(HWND hwnd, UINT32 message, WPARAM wPa
     return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
-void DesktopToastsApp::SendBasicToast(PCWSTR message)
+HRESULT DesktopToastsApp::SendBasicToast(PCWSTR message)
 {
-    ComPtr<IXmlDocument> doc = DesktopNotificationManagerCompat::CreateXmlDocumentFromString(LR"(<toast>
+    ComPtr<IXmlDocument> doc;
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::CreateXmlDocumentFromString(LR"(<toast>
     <visual>
         <binding template="ToastGeneric">
             <text></text>
         </binding>
     </visual>
-</toast>)");
+</toast>)", &doc));
 
     PCWSTR textValues[] = {
         message
     };
-    SetTextValues(textValues, ARRAYSIZE(textValues), doc.Get());
+    RETURN_IF_FAILED(SetTextValues(textValues, ARRAYSIZE(textValues), doc.Get()));
 
-    ShowToast(doc.Get());
+    return ShowToast(doc.Get());
 }
