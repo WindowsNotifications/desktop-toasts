@@ -10,12 +10,12 @@
   IgnorableNamespaces="uap mp rescap com desktop">
 
   <Identity
-    Name="WindowsNotifications.DesktopToastsCppPackaged"
+    Name="WindowsNotifications.DesktopToastsCppWrlPackaged"
     Publisher="CN=anbare"
     Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>DesktopToastsCppPackageProject</DisplayName>
+    <DisplayName>DesktopToastsCppWrlPackageProject</DisplayName>
     <PublisherDisplayName>anbare</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -34,8 +34,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="DesktopToastsCppPackageProject"
-        Description="DesktopToastsCppPackageProject"
+        DisplayName="DesktopToastsCppWrlPackageProject"
+        Description="DesktopToastsCppWrlPackageProject"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
@@ -48,7 +48,7 @@
             <!--Register COM CLSID LocalServer32 registry key-->
             <com:Extension Category="windows.comServer">
                 <com:ComServer>
-                    <com:ExeServer Executable="DesktopToastsCppApp\DesktopToastsCppApp.exe" Arguments="-ToastActivated" DisplayName="Toast activator">
+                    <com:ExeServer Executable="DesktopToastsCppWrlApp\DesktopToastsCppWrlApp.exe" Arguments="-ToastActivated" DisplayName="Toast activator">
                         <com:Class Id="23A5B06E-20BB-4E7E-A0AC-6982ED6A6041" DisplayName="Toast activator"/>
                     </com:ExeServer>
                 </com:ComServer>
