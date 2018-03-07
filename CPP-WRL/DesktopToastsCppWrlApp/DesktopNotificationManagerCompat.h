@@ -44,11 +44,6 @@ namespace DesktopNotificationManagerCompat
     HRESULT CreateToastNotifier(IToastNotifier** notifier);
 
     /// <summary>
-    /// Creates a toast notification. This is simply a convenience helper method.
-    /// </summary>
-    HRESULT CreateToastNotification(ABI::Windows::Data::Xml::Dom::IXmlDocument* content, IToastNotification** notification);
-
-    /// <summary>
     /// Creates an XmlDocument initialized with the specified string. This is simply a convenience helper method.
     /// </summary>
     HRESULT CreateXmlDocumentFromString(const wchar_t *xmlString, ABI::Windows::Data::Xml::Dom::IXmlDocument** doc);
