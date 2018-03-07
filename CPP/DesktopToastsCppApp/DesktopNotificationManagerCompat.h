@@ -13,7 +13,6 @@
 #pragma once
 #include <string>
 #include <memory>
-#include <rpc.h>
 #include <Windows.h>
 #include <windows.ui.notifications.h>
 #include <wrl.h>
