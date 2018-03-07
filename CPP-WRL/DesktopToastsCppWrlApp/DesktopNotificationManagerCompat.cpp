@@ -128,11 +128,12 @@ namespace DesktopNotificationManagerCompat
 
     HRESULT CreateXmlDocumentFromString(const wchar_t *xmlString, IXmlDocument **doc)
     {
-        ComPtr<IInspectable> docInspectable;
-        RETURN_IF_FAILED(RoActivateInstance(HStringReference(RuntimeClass_Windows_Data_Xml_Dom_XmlDocument).Get(), docInspectable.ReleaseAndGetAddressOf()));
-
         ComPtr<IXmlDocument> answer;
-        RETURN_IF_FAILED(docInspectable.As(&answer));
+        MakeAndInitialize<XmlDocument>(&answer);
+        //RETURN_IF_FAILED(RoActivateInstance(HStringReference(RuntimeClass_Windows_Data_Xml_Dom_XmlDocument).Get(), docInspectable.ReleaseAndGetAddressOf()));
+
+        //ComPtr<IXmlDocument> answer;
+        //RETURN_IF_FAILED(docInspectable.As(&answer));
 
         ComPtr<IXmlDocumentIO> docIO;
         RETURN_IF_FAILED(answer.As(&docIO));
