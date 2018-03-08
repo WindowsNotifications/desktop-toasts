@@ -239,7 +239,7 @@ namespace DesktopNotifications
         }
 
         /// <summary>
-        /// Gets notification history, for all notifications sent by this app, from action center.
+        /// Gets all notifications sent by this app that are currently still in Action Center.
         /// </summary>
         /// <returns>A collection of toasts.</returns>
         public IReadOnlyList<ToastNotification> GetHistory()

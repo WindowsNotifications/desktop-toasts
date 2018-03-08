@@ -142,16 +142,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
+    <ClCompile Include="DesktopNotificationManagerCompat.cpp" />
     <ClCompile Include="DesktopToastsSample.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="toastImageAndText.png" />
-    <Content Include="toastImageAndText.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <ClInclude Include="DesktopNotificationManagerCompat.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

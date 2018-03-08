@@ -42,6 +42,8 @@ namespace DesktopToastsApp
         public MainWindow()
         {
             InitializeComponent();
+
+            // IMPORTANT: Look at App.xaml.cs for required registration and activation steps
         }
 
         private async void ButtonPopToast_Click(object sender, RoutedEventArgs e)
