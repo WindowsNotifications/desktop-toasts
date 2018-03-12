@@ -102,8 +102,8 @@ DesktopToastsApp* DesktopToastsApp::s_currentInstance = nullptr;
 // when the notification is activated.  The CLSID of the object needs to be registered with the
 // OS via its shortcut so that it knows who to call later. The WiX installer adds that to the shortcut.
 // Be sure to install the app via the WiX installer once before debugging!
-class DECLSPEC_UUID("23A5B06E-20BB-4E7E-A0AC-6982ED6A6041") NotificationActivator WrlSealed
-    : public RuntimeClass<RuntimeClassFlags<ClassicCom>, INotificationActivationCallback> WrlFinal
+class DECLSPEC_UUID("23A5B06E-20BB-4E7E-A0AC-6982ED6A6041") NotificationActivator WrlSealed WrlFinal
+    : public RuntimeClass<RuntimeClassFlags<ClassicCom>, INotificationActivationCallback>
 {
 public: 
     virtual HRESULT STDMETHODCALLTYPE Activate(
