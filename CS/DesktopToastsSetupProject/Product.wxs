@@ -24,13 +24,13 @@
     <Fragment>
         <DirectoryRef Id="ProgramMenuFolder">
             <Component Id="ApplicationShortcut" Guid="c7a62885-eb05-40ee-9351-20cce2092d00">
-                <Shortcut Id="ApplicationStartMenuShortcut" Name="Desktop Toasts" Description="Desktop Toasts Sample" Target="[INSTALLFOLDER]DesktopToastsApp.exe" WorkingDirectory="INSTALLFOLDER">
+                <Shortcut Id="ApplicationStartMenuShortcut" Name="Desktop Toasts NO COM" Description="Desktop Toasts Sample" Target="[INSTALLFOLDER]DesktopToastsApp.exe" WorkingDirectory="INSTALLFOLDER">
 
                     <!--AUMID-->
                     <ShortcutProperty Key="System.AppUserModel.ID" Value="WindowsNotifications.DesktopToasts"/>
 
                     <!--COM CLSID, specifying which CLSID to activate when toast clicked-->
-                    <ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{50cfb67f-bc8a-477d-938c-93cf6bfb3320}"/>
+                    <!--<ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{50cfb67f-bc8a-477d-938c-93cf6bfb3320}"/>-->
 
                 </Shortcut>
 

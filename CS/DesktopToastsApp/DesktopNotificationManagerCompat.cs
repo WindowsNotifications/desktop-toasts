@@ -56,8 +56,8 @@ namespace DesktopNotifications
 
             _aumid = aumid;
 
-            String exePath = Process.GetCurrentProcess().MainModule.FileName;
-            RegisterComServer<T>(exePath);
+            //String exePath = Process.GetCurrentProcess().MainModule.FileName;
+            //RegisterComServer<T>(exePath);
 
             _registeredAumidAndComServer = true;
         }

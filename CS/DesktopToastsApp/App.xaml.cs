@@ -30,7 +30,7 @@ namespace DesktopToastsApp
         {
             // Register AUMID, COM server, and activator
             DesktopNotificationManagerCompat.RegisterAumidAndComServer<MyNotificationActivator>("WindowsNotifications.DesktopToasts");
-            DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
+            //DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
 
             // If launched from a toast
             // This launch arg was specified in our WiX installer where we register the LocalServer32 exe path.
