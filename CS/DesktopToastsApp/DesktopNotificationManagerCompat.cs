@@ -145,11 +145,11 @@ namespace DesktopNotifications
             }
 
             // If not registered activator yet
-            if (!_registeredActivator)
-            {
-                // Incorrect usage
-                throw new Exception("You must call RegisterActivator first.");
-            }
+            //if (!_registeredActivator)
+            //{
+            //    // Incorrect usage
+            //    throw new Exception("You must call RegisterActivator first.");
+            //}
         }
 
         /// <summary>
