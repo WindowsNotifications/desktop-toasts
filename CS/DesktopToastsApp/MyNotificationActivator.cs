@@ -38,83 +38,85 @@ namespace DesktopToastsApp
                 if (arguments.Length == 0)
                 {
                     OpenWindowIfNeeded();
+                    (App.Current.Windows[0] as MainWindow).ShowMessage("COM activated, empty args");
                     return;
                 }
 
                 // Parse the query string (using NuGet package QueryString.NET)
-                QueryString args = QueryString.Parse(arguments);
-
-                // See what action is being requested 
-                switch (args["action"])
+                try
                 {
-                    // Open the image
-                    case "viewImage":
+                    QueryString args = QueryString.Parse(arguments);
 
-                        // The URL retrieved from the toast args
-                        string imageUrl = args["imageUrl"];
+                    // See what action is being requested 
+                    switch (args["action"])
+                    {
+                        // Open the image
+                        case "viewImage":
 
-                        // Make sure we have a window open and in foreground
-                        OpenWindowIfNeeded();
+                            // The URL retrieved from the toast args
+                            string imageUrl = args["imageUrl"];
 
-                        // And then show the image
-                        (App.Current.Windows[0] as MainWindow).ShowImage(imageUrl);
+                            // Make sure we have a window open and in foreground
+                            OpenWindowIfNeeded();
 
-                        break;
+                            // And then show the image
+                            (App.Current.Windows[0] as MainWindow).ShowImage(imageUrl);
 
-                    // Open the conversation
-                    case "viewConversation":
+                            return;
 
-                        // The conversation ID retrieved from the toast args
-                        int conversationId = int.Parse(args["conversationId"]);
+                        // Open the conversation
+                        case "viewConversation":
 
-                        // Make sure we have a window open and in foreground
-                        OpenWindowIfNeeded();
+                            // The conversation ID retrieved from the toast args
+                            int conversationId = int.Parse(args["conversationId"]);
 
-                        // And then show the conversation
-                        (App.Current.Windows[0] as MainWindow).ShowConversation();
+                            // Make sure we have a window open and in foreground
+                            OpenWindowIfNeeded();
 
-                        break;
+                            // And then show the conversation
+                            (App.Current.Windows[0] as MainWindow).ShowConversation();
 
-                    // Background: Quick reply to the conversation
-                    case "reply":
+                            return;
 
-                        // Get the response the user typed
-                        string msg = userInput["tbReply"];
+                        // Background: Quick reply to the conversation
+                        case "reply":
 
-                        // And send this message
-                        ShowToast("Sending message: " + msg);
+                            // Get the response the user typed
+                            string msg = userInput["tbReply"];
 
-                        // If there's no windows open, exit the app
-                        if (App.Current.Windows.Count == 0)
-                        {
-                            Application.Current.Shutdown();
-                        }
+                            // And send this message
+                            ShowToast("Sending message: " + msg);
 
-                        break;
+                            // If there's no windows open, exit the app
+                            if (App.Current.Windows.Count == 0)
+                            {
+                                Application.Current.Shutdown();
+                            }
 
-                    // Background: Send a like
-                    case "like":
+                            return;
 
-                        ShowToast("Sending like");
+                        // Background: Send a like
+                        case "like":
 
-                        // If there's no windows open, exit the app
-                        if (App.Current.Windows.Count == 0)
-                        {
-                            Application.Current.Shutdown();
-                        }
+                            ShowToast("Sending like");
 
-                        break;
+                            // If there's no windows open, exit the app
+                            if (App.Current.Windows.Count == 0)
+                            {
+                                Application.Current.Shutdown();
+                            }
 
-                    default:
-
-                        OpenWindowIfNeeded();
-
-                        break;
+                            return;
+                    }
                 }
+                catch { }
+
+                OpenWindowIfNeeded();
+                (App.Current.Windows[0] as MainWindow).ShowMessage("COM activated, unknown args: " + arguments);
             });
         }
 
-        private void OpenWindowIfNeeded()
+        public static void OpenWindowIfNeeded()
         {
             // Make sure we have a window open (in case user clicked toast while app closed)
             if (App.Current.Windows.Count == 0)

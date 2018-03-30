@@ -48,6 +48,19 @@
             <!-- </Component> -->
             <Component Id="DesktopToastsApp.exe" Guid="53c731ab-8f18-4e42-9cd2-cfcc7ad62a52">
                 <File Id="DesktopToastsApp.exe" Name="DesktopToastsApp.exe" Source="$(var.DesktopToastsApp.TargetDir)DesktopToastsApp.exe"/>
+
+                <RegistryKey Root="HKCR"
+                 Key="desktopToasts"
+                 Action="createAndRemoveOnUninstall">
+                    <RegistryValue Type="string" Name="URL Protocol" Value=""/>
+                    <RegistryValue Type="string" Value="URL:Desktop Toasts protocol"/>
+                    <RegistryKey Key="DefaultIcon">
+                        <RegistryValue Type="string" Value="DesktopToastsApp.exe" />
+                    </RegistryKey>
+                    <RegistryKey Key="shell\open\command">
+                        <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]DesktopToastsApp.exe&quot; &quot;%1&quot;" />
+                    </RegistryKey>
+                </RegistryKey>
             </Component>
             <Component Id="Microsoft.Toolkit.Uwp.Notifications.dll" Guid="fd08f63d-48d6-4bac-a3d4-f788af135ae7">
                 <File Id="Microsoft.Toolkit.Uwp.Notifications.dll" Name="Microsoft.Toolkit.Uwp.Notifications.dll" Source="$(var.DesktopToastsApp.TargetDir)Microsoft.Toolkit.Uwp.Notifications.dll"/>

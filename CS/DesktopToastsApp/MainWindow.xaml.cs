@@ -46,9 +46,102 @@ namespace DesktopToastsApp
             // IMPORTANT: Look at App.xaml.cs for required registration and activation steps
         }
 
-        private async void ButtonPopToast_Click(object sender, RoutedEventArgs e)
+        private void ButtonPopToast_Click(object sender, RoutedEventArgs e)
         {
-            string title = "Andrew sent you a picture";
+            PopToast(protocol: false);
+        }
+
+        private static bool _hasPerformedCleanup;
+        private static async Task<string> DownloadImageToDisk(string httpImage)
+        {
+            // Toasts can live for up to 3 days, so we cache images for up to 3 days.
+            // Note that this is a very simple cache that doesn't account for space usage, so
+            // this could easily consume a lot of space within the span of 3 days.
+
+            try
+            {
+                if (DesktopNotificationManagerCompat.CanUseHttpImages)
+                {
+                    return httpImage;
+                }
+
+                var directory = Directory.CreateDirectory(System.IO.Path.GetTempPath() + "WindowsNotifications.DesktopToasts.Images");
+
+                if (!_hasPerformedCleanup)
+                {
+                    // First time we run, we'll perform cleanup of old images
+                    _hasPerformedCleanup = true;
+
+                    foreach (var d in directory.EnumerateDirectories())
+                    {
+                        if (d.CreationTimeUtc.Date < DateTime.UtcNow.Date.AddDays(-3))
+                        {
+                            d.Delete(true);
+                        }
+                    }
+                }
+
+                var dayDirectory = directory.CreateSubdirectory(DateTime.UtcNow.Day.ToString());
+                string imagePath = dayDirectory.FullName + "\\" + (uint)httpImage.GetHashCode();
+
+                if (File.Exists(imagePath))
+                {
+                    return imagePath;
+                }
+
+                HttpClient c = new HttpClient();
+                using (var stream = await c.GetStreamAsync(httpImage))
+                {
+                    using (var fileStream = File.OpenWrite(imagePath))
+                    {
+                        stream.CopyTo(fileStream);
+                    }
+                }
+
+                return imagePath;
+            }
+            catch { return ""; }
+        }
+
+        internal void ShowConversation()
+        {
+            ShowMessage("COM activated, view conversation");
+        }
+
+        internal void ShowImage(string imageUrl)
+        {
+            ShowMessage("Showing image: " + imageUrl);
+        }
+
+        internal void ShowMessage(string msg)
+        {
+            ContentBody.Children.Insert(0, new TextBlock()
+            {
+                Text = msg,
+                FontWeight = FontWeights.Bold
+            });
+        }
+
+        private void ButtonClearToasts_Click(object sender, RoutedEventArgs e)
+        {
+            DesktopNotificationManagerCompat.History.Clear();
+        }
+
+        private void ButtonPopProtocol_Click(object sender, RoutedEventArgs e)
+        {
+            PopToast(protocol: true);
+        }
+
+        private async void PopToast(bool protocol)
+        {
+            string title = protocol ? "ToastGeneric: Protocol+COM" : "ToastGeneric: Foreground+COM";
+
+            bool useEvent = CheckBoxUseEventHandler.IsChecked.GetValueOrDefault();
+            if (useEvent)
+            {
+                title += "+Event";
+            }
+
             string content = "Check this out, The Enchantments!";
             string image = "https://picsum.photos/364/202?image=883";
             int conversationId = 5;
@@ -57,12 +150,14 @@ namespace DesktopToastsApp
             ToastContent toastContent = new ToastContent()
             {
                 // Arguments when the user taps body of toast
-                Launch = new QueryString()
+                Launch = protocol ? "desktopToasts:///viewConversation" : new QueryString()
                 {
                     { "action", "viewConversation" },
                     { "conversationId", conversationId.ToString() }
 
                 }.ToString(),
+
+                ActivationType = protocol ? ToastActivationType.Protocol : ToastActivationType.Foreground,
 
                 Visual = new ToastVisual()
                 {
@@ -141,82 +236,22 @@ namespace DesktopToastsApp
             // And create the toast notification
             var toast = new ToastNotification(doc);
 
+            if (useEvent)
+            {
+                toast.Activated += Toast_Activated;
+            }
+
             // And then show it
             DesktopNotificationManagerCompat.CreateToastNotifier().Show(toast);
         }
 
-        private static bool _hasPerformedCleanup;
-        private static async Task<string> DownloadImageToDisk(string httpImage)
+        private void Toast_Activated(ToastNotification sender, object args)
         {
-            // Toasts can live for up to 3 days, so we cache images for up to 3 days.
-            // Note that this is a very simple cache that doesn't account for space usage, so
-            // this could easily consume a lot of space within the span of 3 days.
-
-            try
+            Application.Current.Dispatcher.Invoke(delegate
             {
-                if (DesktopNotificationManagerCompat.CanUseHttpImages)
-                {
-                    return httpImage;
-                }
-
-                var directory = Directory.CreateDirectory(System.IO.Path.GetTempPath() + "WindowsNotifications.DesktopToasts.Images");
-
-                if (!_hasPerformedCleanup)
-                {
-                    // First time we run, we'll perform cleanup of old images
-                    _hasPerformedCleanup = true;
-
-                    foreach (var d in directory.EnumerateDirectories())
-                    {
-                        if (d.CreationTimeUtc.Date < DateTime.UtcNow.Date.AddDays(-3))
-                        {
-                            d.Delete(true);
-                        }
-                    }
-                }
-
-                var dayDirectory = directory.CreateSubdirectory(DateTime.UtcNow.Day.ToString());
-                string imagePath = dayDirectory.FullName + "\\" + (uint)httpImage.GetHashCode();
-
-                if (File.Exists(imagePath))
-                {
-                    return imagePath;
-                }
-
-                HttpClient c = new HttpClient();
-                using (var stream = await c.GetStreamAsync(httpImage))
-                {
-                    using (var fileStream = File.OpenWrite(imagePath))
-                    {
-                        stream.CopyTo(fileStream);
-                    }
-                }
-
-                return imagePath;
-            }
-            catch { return ""; }
-        }
-
-        internal void ShowConversation()
-        {
-            ContentBody.Content = new TextBlock()
-            {
-                Text = "You've just opened a conversation!",
-                FontWeight = FontWeights.Bold
-            };
-        }
-
-        internal void ShowImage(string imageUrl)
-        {
-            ContentBody.Content = new Image()
-            {
-                Source = new BitmapImage(new Uri(imageUrl))
-            };
-        }
-
-        private void ButtonClearToasts_Click(object sender, RoutedEventArgs e)
-        {
-            DesktopNotificationManagerCompat.History.Clear();
+                MyNotificationActivator.OpenWindowIfNeeded();
+                ShowMessage("Activated event fired");
+            });
         }
     }
 }

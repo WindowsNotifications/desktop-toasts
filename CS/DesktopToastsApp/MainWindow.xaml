@@ -9,11 +9,13 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="80"/>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <Grid Margin="20">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
@@ -24,15 +26,27 @@
                 Margin="0,0,6,0"/>
             <Button
                 Grid.Column="1"
+                x:Name="ButtonPopProtocol"
+                Content="Pop protocol"
+                Click="ButtonPopProtocol_Click"
+                Margin="6,0,6,0"/>
+            <Button
+                Grid.Column="2"
                 x:Name="ButtonClearToasts"
                 Content="Clear toasts"
                 Click="ButtonClearToasts_Click"
                 Margin="6,0,0,0"/>
         </Grid>
 
-        <ContentControl
-            x:Name="ContentBody"
+        <CheckBox
             Grid.Row="1"
+            x:Name="CheckBoxUseEventHandler"
+            Content="Use Activated event handler"
+            Margin="20,0"/>
+
+        <StackPanel
+            x:Name="ContentBody"
+            Grid.Row="2"
             Margin="20"/>
     </Grid>
 </Window>

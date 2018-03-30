@@ -40,6 +40,13 @@ namespace DesktopToastsApp
                 // and will show a window if necessary.
             }
 
+            else if (e.Args.Length > 0 && e.Args[0].StartsWith("desktopToasts:", StringComparison.CurrentCultureIgnoreCase))
+            {
+                MyNotificationActivator.OpenWindowIfNeeded();
+
+                (App.Current.Windows[0] as MainWindow).ShowMessage("Protocol activated: " + string.Join(" ", e.Args));
+            }
+
             else
             {
                 // Show the window
