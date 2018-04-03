@@ -31,6 +31,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Windows.Data.Xml.Dom;
 using Windows.UI.Notifications;
+using System.ComponentModel;
 
 namespace DesktopToastsApp
 {
@@ -43,12 +44,68 @@ namespace DesktopToastsApp
         {
             InitializeComponent();
 
+#if COM
+            Title = "Desktop Toasts COM";
+#else
+            Title = "Desktop Toasts No COM";
+#endif
+
+            switch (Properties.Settings.Default.ToastType)
+            {
+                case "Foreground":
+                    RadioButtonForeground.IsChecked = true;
+                    break;
+
+                case "Background":
+                    RadioButtonBackground.IsChecked = true;
+                    break;
+
+                case "Protocol":
+                    RadioButtonProtocol.IsChecked = true;
+                    break;
+
+                default:
+                    RadioButtonLegacy.IsChecked = true;
+                    break;
+            }
+
+            CheckBoxUseEventHandler.IsChecked = Properties.Settings.Default.UseEvent;
+
             // IMPORTANT: Look at App.xaml.cs for required registration and activation steps
+        }
+
+        private string GetToastType()
+        {
+            if (RadioButtonForeground.IsChecked.GetValueOrDefault())
+            {
+                return "Foreground";
+            }
+
+            if (RadioButtonBackground.IsChecked.GetValueOrDefault())
+            {
+                return "Background";
+            }
+
+            if (RadioButtonProtocol.IsChecked.GetValueOrDefault())
+            {
+                return "Protocol";
+            }
+
+            return "Legacy";
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            Properties.Settings.Default.ToastType = GetToastType();
+            Properties.Settings.Default.UseEvent = CheckBoxUseEventHandler.IsChecked.GetValueOrDefault();
+            Properties.Settings.Default.Save();
+
+            base.OnClosing(e);
         }
 
         private void ButtonPopToast_Click(object sender, RoutedEventArgs e)
         {
-            PopToast(protocol: false);
+            PopToast();
         }
 
         private static bool _hasPerformedCleanup;
@@ -135,111 +192,133 @@ namespace DesktopToastsApp
             DesktopNotificationManagerCompat.History.Clear();
         }
 
-        private void ButtonPopProtocol_Click(object sender, RoutedEventArgs e)
+        private async void PopToast()
         {
-            PopToast(protocol: true);
-        }
+            string comFlavor;
+            string protocolBaseUrl;
+#if COM
+            comFlavor = "COM";
+            protocolBaseUrl = "desktopToastsCom";
+#else
+            comFlavor = "No COM";
+            protocolBaseUrl = "desktopToastsNoCom";
+#endif
 
-        private async void PopToast(bool protocol)
-        {
-            string title = protocol ? "ToastGeneric: Protocol+COM" : "ToastGeneric: Foreground+COM";
+            string appFlavor = "Win32";
+            string toastFlavor = GetToastType();
+
+            string title = $"{appFlavor} {comFlavor} / {toastFlavor}";
 
             bool useEvent = CheckBoxUseEventHandler.IsChecked.GetValueOrDefault();
             if (useEvent)
             {
-                title += "+Event";
+                title += " / Event";
+            }
+            else
+            {
+                title += " / No event";
             }
 
             string content = "Check this out, The Enchantments!";
             string image = "https://picsum.photos/364/202?image=883";
             int conversationId = 5;
 
-            // Construct the toast content
-            ToastContent toastContent = new ToastContent()
-            {
-                // Arguments when the user taps body of toast
-                Launch = protocol ? "desktopToasts:///viewConversation" : new QueryString()
-                {
-                    { "action", "viewConversation" },
-                    { "conversationId", conversationId.ToString() }
-
-                }.ToString(),
-
-                ActivationType = protocol ? ToastActivationType.Protocol : ToastActivationType.Foreground,
-
-                Visual = new ToastVisual()
-                {
-                    BindingGeneric = new ToastBindingGeneric()
-                    {
-                        Children =
-                        {
-                            new AdaptiveText()
-                            {
-                                Text = title
-                            },
-
-                            new AdaptiveText()
-                            {
-                                Text = content
-                            },
-
-                            new AdaptiveImage()
-                            {
-                                // Non-Desktop Bridge apps cannot use HTTP images, so
-                                // we download and reference the image locally
-                                Source = await DownloadImageToDisk(image)
-                            }
-                        },
-
-                        AppLogoOverride = new ToastGenericAppLogo()
-                        {
-                            Source = await DownloadImageToDisk("https://unsplash.it/64?image=1005"),
-                            HintCrop = ToastGenericAppLogoCrop.Circle
-                        }
-                    }
-                },
-
-                Actions = new ToastActionsCustom()
-                {
-                    Inputs =
-                    {
-                        new ToastTextBox("tbReply")
-                        {
-                            PlaceholderContent = "Type a response"
-                        }
-                    },
-
-                    Buttons =
-                    {
-                        // Note that there's no reason to specify background activation, since our COM
-                        // activator decides whether to process in background or launch foreground window
-                        new ToastButton("Reply", new QueryString()
-                        {
-                            { "action", "reply" },
-                            { "conversationId", conversationId.ToString() }
-
-                        }.ToString()),
-
-                        new ToastButton("Like", new QueryString()
-                        {
-                            { "action", "like" },
-                            { "conversationId", conversationId.ToString() }
-
-                        }.ToString()),
-
-                        new ToastButton("View", new QueryString()
-                        {
-                            { "action", "viewImage" },
-                            { "imageUrl", image }
-
-                        }.ToString())
-                    }
-                }
-            };
 
             // Make sure to use Windows.Data.Xml.Dom
             var doc = new XmlDocument();
-            doc.LoadXml(toastContent.GetContent());
+
+            if (toastFlavor != "Legacy")
+            {
+                // Construct the toast content
+                ToastContent toastContent = new ToastContent()
+                {
+                    // Arguments when the user taps body of toast
+                    Launch = toastFlavor == "Protocol" ? $"{protocolBaseUrl}:///viewConversation" : new QueryString()
+                    {
+                        { "action", "viewConversation" },
+                        { "conversationId", conversationId.ToString() }
+
+                    }.ToString(),
+
+                    ActivationType = toastFlavor == "Protocol" ? ToastActivationType.Protocol : (toastFlavor == "Background" ? ToastActivationType.Background : ToastActivationType.Foreground),
+
+                    Visual = new ToastVisual()
+                    {
+                        BindingGeneric = new ToastBindingGeneric()
+                        {
+                            Children =
+                            {
+                                new AdaptiveText()
+                                {
+                                    Text = title
+                                },
+
+                                new AdaptiveText()
+                                {
+                                    Text = content
+                                },
+
+                                new AdaptiveImage()
+                                {
+                                    // Non-Desktop Bridge apps cannot use HTTP images, so
+                                    // we download and reference the image locally
+                                    Source = await DownloadImageToDisk(image)
+                                }
+                            },
+
+                            AppLogoOverride = new ToastGenericAppLogo()
+                            {
+                                Source = await DownloadImageToDisk("https://unsplash.it/64?image=1005"),
+                                HintCrop = ToastGenericAppLogoCrop.Circle
+                            }
+                        }
+                    },
+
+                    Actions = new ToastActionsCustom()
+                    {
+                        Inputs =
+                        {
+                            new ToastTextBox("tbReply")
+                            {
+                                PlaceholderContent = "Type a response"
+                            }
+                        },
+
+                        Buttons =
+                        {
+                            // Note that there's no reason to specify background activation, since our COM
+                            // activator decides whether to process in background or launch foreground window
+                            new ToastButton("Reply", new QueryString()
+                            {
+                                { "action", "reply" },
+                                { "conversationId", conversationId.ToString() }
+
+                            }.ToString()),
+
+                            new ToastButton("Like", new QueryString()
+                            {
+                                { "action", "like" },
+                                { "conversationId", conversationId.ToString() }
+
+                            }.ToString()),
+
+                            new ToastButton("View", new QueryString()
+                            {
+                                { "action", "viewImage" },
+                                { "imageUrl", image }
+
+                            }.ToString())
+                        }
+                    }
+                };
+                doc.LoadXml(toastContent.GetContent());
+            }
+            else
+            {
+                doc = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText01);
+                XmlNodeList toastTextElements = doc.GetElementsByTagName("text");
+                toastTextElements[0].AppendChild(doc.CreateTextNode(title));
+            }
 
             // And create the toast notification
             var toast = new ToastNotification(doc);

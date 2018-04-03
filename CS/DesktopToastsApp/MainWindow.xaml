@@ -9,13 +9,15 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="80"/>
-            <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
-        <Grid Margin="20">
+        <Grid Margin="20" Grid.ColumnSpan="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
@@ -25,12 +27,6 @@
                 Click="ButtonPopToast_Click"
                 Margin="0,0,6,0"/>
             <Button
-                Grid.Column="1"
-                x:Name="ButtonPopProtocol"
-                Content="Pop protocol"
-                Click="ButtonPopProtocol_Click"
-                Margin="6,0,6,0"/>
-            <Button
                 Grid.Column="2"
                 x:Name="ButtonClearToasts"
                 Content="Clear toasts"
@@ -38,15 +34,47 @@
                 Margin="6,0,0,0"/>
         </Grid>
 
-        <CheckBox
+        <StackPanel
             Grid.Row="1"
-            x:Name="CheckBoxUseEventHandler"
-            Content="Use Activated event handler"
-            Margin="20,0"/>
+            Grid.Column="1"
+            Margin="20,0">
+            <StackPanel.Resources>
+                <Style TargetType="RadioButton">
+                    <Setter Property="Margin" Value="0,6,0,0"/>
+                </Style>
+            </StackPanel.Resources>
+
+            <TextBlock
+                Text="Toast type"
+                FontWeight="Bold"/>
+            <RadioButton
+                x:Name="RadioButtonForeground"
+                Content="Foreground"/>
+            <RadioButton
+                x:Name="RadioButtonBackground"
+                Content="Background"/>
+            <RadioButton
+                x:Name="RadioButtonProtocol"
+                Content="Protocol"/>
+            <RadioButton
+                x:Name="RadioButtonLegacy"
+                Content="Legacy"/>
+
+            <TextBlock
+                Text="Event handler"
+                FontWeight="Bold"
+                Margin="0,18,0,0"/>
+            <CheckBox
+                Grid.Row="1"
+                x:Name="CheckBoxUseEventHandler"
+                Content="Use Activated event handler"
+                Margin="0,6,0,0"/>
+
+        </StackPanel>
 
         <StackPanel
             x:Name="ContentBody"
-            Grid.Row="2"
-            Margin="20"/>
+            Grid.Row="1"
+            Margin="20,0,0,20"/>
     </Grid>
 </Window>

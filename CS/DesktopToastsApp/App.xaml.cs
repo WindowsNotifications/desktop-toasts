@@ -26,13 +26,19 @@ namespace DesktopToastsApp
     /// </summary>
     public partial class App : Application
     {
+#if COM
+        private const string AUMID = "WindowsNotifications.DesktopToasts";
+#else
+        private const string AUMID = "WindowsNotifications.DesktopToastsNoCom";
+#endif
+
         protected override void OnStartup(StartupEventArgs e)
         {
             SingleApplication.Run(delegate
             {
                 // Register AUMID, COM server, and activator
-                DesktopNotificationManagerCompat.RegisterAumidAndComServer<MyNotificationActivator>("WindowsNotifications.DesktopToasts");
-                //DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
+                DesktopNotificationManagerCompat.RegisterAumidAndComServer<MyNotificationActivator>(AUMID);
+                DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
             }, SingleApplication_Activated, string.Join(" ", e.Args));
 
             base.OnStartup(e);
@@ -40,30 +46,33 @@ namespace DesktopToastsApp
 
         private void SingleApplication_Activated(object sender, string args)
         {
-            // If launched from a toast
-            // This launch arg was specified in our WiX installer where we register the LocalServer32 exe path.
-            if (args.Contains(DesktopNotificationManagerCompat.TOAST_ACTIVATED_LAUNCH_ARG))
+            Dispatcher.Invoke(delegate
             {
-                // Our NotificationActivator code will run after this completes,
-                // and will show a window if necessary.
-            }
+                // If launched from a toast
+                // This launch arg was specified in our WiX installer where we register the LocalServer32 exe path.
+                if (args.Contains(DesktopNotificationManagerCompat.TOAST_ACTIVATED_LAUNCH_ARG))
+                {
+                    // Our NotificationActivator code will run after this completes,
+                    // and will show a window if necessary.
+                }
 
-            else if (args.StartsWith("desktopToasts:", StringComparison.CurrentCultureIgnoreCase))
-            {
-                MyNotificationActivator.CreateWindowIfNeeded();
+                else if (args.StartsWith("desktopToasts:", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    MyNotificationActivator.CreateWindowIfNeeded();
 
-                (App.Current.Windows[0] as MainWindow).ShowMessage("Protocol activated: " + args);
-            }
+                    (App.Current.Windows[0] as MainWindow).ShowMessage("Protocol activated: " + args);
+                }
 
-            else
-            {
-                // Show the window
-                // In App.xaml, be sure to remove the StartupUri so that a window doesn't
-                // get created by default, since we're creating windows ourselves (and sometimes we
-                // don't want to create a window if handling a background activation).
-                MyNotificationActivator.CreateWindowIfNeeded();
-                (App.Current.Windows[0] as MainWindow).ShowMessage("EXE launched");
-            }
+                else
+                {
+                    // Show the window
+                    // In App.xaml, be sure to remove the StartupUri so that a window doesn't
+                    // get created by default, since we're creating windows ourselves (and sometimes we
+                    // don't want to create a window if handling a background activation).
+                    MyNotificationActivator.CreateWindowIfNeeded();
+                    (App.Current.Windows[0] as MainWindow).ShowMessage("CMD line launched");
+                }
+            });
         }
     }
 }

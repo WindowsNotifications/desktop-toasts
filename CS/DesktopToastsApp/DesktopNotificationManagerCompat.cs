@@ -56,8 +56,10 @@ namespace DesktopNotifications
 
             _aumid = aumid;
 
-            //String exePath = Process.GetCurrentProcess().MainModule.FileName;
-            //RegisterComServer<T>(exePath);
+#if COM
+            String exePath = Process.GetCurrentProcess().MainModule.FileName;
+            RegisterComServer<T>(exePath);
+#endif
 
             _registeredAumidAndComServer = true;
         }
@@ -81,6 +83,7 @@ namespace DesktopNotifications
         public static void RegisterActivator<T>()
             where T : NotificationActivator
         {
+#if COM
             // Register type
             var regService = new RegistrationServices();
 
@@ -90,6 +93,7 @@ namespace DesktopNotifications
                 RegistrationConnectionType.MultipleUse);
 
             _registeredActivator = true;
+#endif
         }
 
         /// <summary>
@@ -316,7 +320,7 @@ namespace DesktopNotifications
         public abstract void OnActivated(string arguments, NotificationUserInput userInput, string appUserModelId);
 
         // These are the new APIs for Windows 10
-        #region NewAPIs
+#region NewAPIs
         [StructLayout(LayoutKind.Sequential), Serializable]
         public struct NOTIFICATION_USER_INPUT_DATA
         {
@@ -342,7 +346,7 @@ namespace DesktopNotifications
                 [In, MarshalAs(UnmanagedType.U4)]
             uint dataCount);
         }
-        #endregion
+#endregion
     }
 
     /// <summary>
