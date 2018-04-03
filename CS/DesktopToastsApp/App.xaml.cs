@@ -28,23 +28,31 @@ namespace DesktopToastsApp
     {
         protected override void OnStartup(StartupEventArgs e)
         {
-            // Register AUMID, COM server, and activator
-            DesktopNotificationManagerCompat.RegisterAumidAndComServer<MyNotificationActivator>("WindowsNotifications.DesktopToasts");
-            //DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
+            SingleApplication.Run(delegate
+            {
+                // Register AUMID, COM server, and activator
+                DesktopNotificationManagerCompat.RegisterAumidAndComServer<MyNotificationActivator>("WindowsNotifications.DesktopToasts");
+                //DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
+            }, SingleApplication_Activated, string.Join(" ", e.Args));
 
+            base.OnStartup(e);
+        }
+
+        private void SingleApplication_Activated(object sender, string args)
+        {
             // If launched from a toast
             // This launch arg was specified in our WiX installer where we register the LocalServer32 exe path.
-            if (e.Args.Contains(DesktopNotificationManagerCompat.TOAST_ACTIVATED_LAUNCH_ARG))
+            if (args.Contains(DesktopNotificationManagerCompat.TOAST_ACTIVATED_LAUNCH_ARG))
             {
                 // Our NotificationActivator code will run after this completes,
                 // and will show a window if necessary.
             }
 
-            else if (e.Args.Length > 0 && e.Args[0].StartsWith("desktopToasts:", StringComparison.CurrentCultureIgnoreCase))
+            else if (args.StartsWith("desktopToasts:", StringComparison.CurrentCultureIgnoreCase))
             {
-                MyNotificationActivator.OpenWindowIfNeeded();
+                MyNotificationActivator.CreateWindowIfNeeded();
 
-                (App.Current.Windows[0] as MainWindow).ShowMessage("Protocol activated: " + string.Join(" ", e.Args));
+                (App.Current.Windows[0] as MainWindow).ShowMessage("Protocol activated: " + args);
             }
 
             else
@@ -53,10 +61,9 @@ namespace DesktopToastsApp
                 // In App.xaml, be sure to remove the StartupUri so that a window doesn't
                 // get created by default, since we're creating windows ourselves (and sometimes we
                 // don't want to create a window if handling a background activation).
-                new MainWindow().Show();
+                MyNotificationActivator.CreateWindowIfNeeded();
+                (App.Current.Windows[0] as MainWindow).ShowMessage("EXE launched");
             }
-
-            base.OnStartup(e);
         }
     }
 }

@@ -115,6 +115,14 @@ namespace DesktopToastsApp
 
         internal void ShowMessage(string msg)
         {
+            SingleApplication.SwitchToCurrentInstance();
+
+            // Activate the window, bringing it to focus
+            App.Current.Windows[0].Activate();
+
+            // And make sure to maximize the window too, in case it was currently minimized
+            App.Current.Windows[0].WindowState = WindowState.Normal;
+
             ContentBody.Children.Insert(0, new TextBlock()
             {
                 Text = msg,
@@ -249,7 +257,7 @@ namespace DesktopToastsApp
         {
             Application.Current.Dispatcher.Invoke(delegate
             {
-                MyNotificationActivator.OpenWindowIfNeeded();
+                MyNotificationActivator.CreateWindowIfNeeded();
                 ShowMessage("Activated event fired");
             });
         }
