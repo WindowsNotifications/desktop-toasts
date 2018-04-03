@@ -37,7 +37,7 @@ namespace DesktopToastsApp
             {
                 if (arguments.Length == 0)
                 {
-                    OpenWindowIfNeeded();
+                    CreateWindowIfNeeded();
                     (App.Current.Windows[0] as MainWindow).ShowMessage("COM activated, empty args");
                     return;
                 }
@@ -57,7 +57,7 @@ namespace DesktopToastsApp
                             string imageUrl = args["imageUrl"];
 
                             // Make sure we have a window open and in foreground
-                            OpenWindowIfNeeded();
+                            CreateWindowIfNeeded();
 
                             // And then show the image
                             (App.Current.Windows[0] as MainWindow).ShowImage(imageUrl);
@@ -71,7 +71,7 @@ namespace DesktopToastsApp
                             int conversationId = int.Parse(args["conversationId"]);
 
                             // Make sure we have a window open and in foreground
-                            OpenWindowIfNeeded();
+                            CreateWindowIfNeeded();
 
                             // And then show the conversation
                             (App.Current.Windows[0] as MainWindow).ShowConversation();
@@ -111,24 +111,18 @@ namespace DesktopToastsApp
                 }
                 catch { }
 
-                OpenWindowIfNeeded();
+                CreateWindowIfNeeded();
                 (App.Current.Windows[0] as MainWindow).ShowMessage("COM activated, unknown args: " + arguments);
             });
         }
 
-        public static void OpenWindowIfNeeded()
+        public static void CreateWindowIfNeeded()
         {
             // Make sure we have a window open (in case user clicked toast while app closed)
             if (App.Current.Windows.Count == 0)
             {
                 new MainWindow().Show();
             }
-
-            // Activate the window, bringing it to focus
-            App.Current.Windows[0].Activate();
-
-            // And make sure to maximize the window too, in case it was currently minimized
-            App.Current.Windows[0].WindowState = WindowState.Normal;
         }
 
         private void ShowToast(string msg)
