@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Id="*" Name="DesktopToastsComSetupProject" Language="1033" Version="1.0.0.0" Manufacturer="Windows Notifications" UpgradeCode="4be4d374-768e-48e3-8035-0d5476fdf2d2">
+    <Product Id="*" Name="DesktopToastsNoComSetupProject" Language="1033" Version="1.0.0.0" Manufacturer="Windows Notifications" UpgradeCode="3076ba4f-a163-486d-92c7-c1e480ecca15">
         <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
         <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
         <MediaTemplate />
 
-        <Feature Id="ProductFeature" Title="DesktopToastsComSetupProject" Level="1">
+        <Feature Id="ProductFeature" Title="DesktopToastsNoComSetupProject" Level="1">
             <ComponentGroupRef Id="ProductComponents" />
         </Feature>
     </Product>
@@ -14,7 +14,7 @@
     <Fragment>
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFilesFolder">
-                <Directory Id="INSTALLFOLDER" Name="DesktopToastsComSetupProject" />
+                <Directory Id="INSTALLFOLDER" Name="DesktopToastsNoComSetupProject" />
             </Directory>
             <Directory Id="ProgramMenuFolder">
             </Directory>
@@ -23,19 +23,16 @@
 
     <Fragment>
         <DirectoryRef Id="ProgramMenuFolder">
-            <Component Id="ApplicationShortcut" Guid="cab7a51a-c2c3-49d8-ab6e-f7bb38fd7f57">
-                <Shortcut Id="ApplicationStartMenuShortcut" Name="Desktop Toasts COM" Description="Desktop Toasts COM Sample" Target="[INSTALLFOLDER]DesktopToastsApp.exe" WorkingDirectory="INSTALLFOLDER">
+            <Component Id="ApplicationShortcut" Guid="5b3727c0-041f-400a-bc4c-5a031095dfc9">
+                <Shortcut Id="ApplicationStartMenuShortcut" Name="Desktop Toasts NO COM" Description="Desktop Toasts No COM Sample" Target="[INSTALLFOLDER]DesktopToastsApp.exe" WorkingDirectory="INSTALLFOLDER">
 
                     <!--AUMID-->
-                    <ShortcutProperty Key="System.AppUserModel.ID" Value="WindowsNotifications.DesktopToastsCom"/>
-
-                    <!--COM CLSID, specifying which CLSID to activate when toast clicked-->
-                    <ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{658a651e-47a9-4ef5-9add-a0577a66dd4c}"/>
+                    <ShortcutProperty Key="System.AppUserModel.ID" Value="WindowsNotifications.DesktopToastsNoCom"/>
 
                 </Shortcut>
 
-                <RemoveFile Id="RemoveApplicationShortcut" Directory="ProgramMenuFolder" Name="Desktop Toasts COM" On="uninstall"/>
-                <RegistryValue Root="HKCU" Key="Software\DesktopToastsCom" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+                <RemoveFile Id="RemoveApplicationShortcut" Directory="ProgramMenuFolder" Name="Desktop Toasts NO COM" On="uninstall"/>
+                <RegistryValue Root="HKCU" Key="Software\DesktopToastsNoCom" Name="installed" Type="integer" Value="1" KeyPath="yes" />
             </Component>
         </DirectoryRef>
     </Fragment>
@@ -46,14 +43,14 @@
             <!-- <Component Id="ProductComponent"> -->
             <!-- TODO: Insert files, registry keys, and other resources here. -->
             <!-- </Component> -->
-            <Component Id="DesktopToastsApp.exe" Guid="1c665c21-c583-408c-aef9-a13491895e88">
+            <Component Id="DesktopToastsApp.exe" Guid="8eb888ed-9d5a-4b97-b606-16281bb1a9dc">
                 <File Id="DesktopToastsApp.exe" Name="DesktopToastsApp.exe" Source="$(var.DesktopToastsApp.TargetDir)DesktopToastsApp.exe"/>
 
                 <RegistryKey Root="HKCR"
-                 Key="desktopToastsCom"
+                 Key="desktopToastsNoCom"
                  Action="createAndRemoveOnUninstall">
                     <RegistryValue Type="string" Name="URL Protocol" Value=""/>
-                    <RegistryValue Type="string" Value="URL:Desktop Toasts COM protocol"/>
+                    <RegistryValue Type="string" Value="URL:Desktop Toasts No COM protocol"/>
                     <RegistryKey Key="DefaultIcon">
                         <RegistryValue Type="string" Value="DesktopToastsApp.exe" />
                     </RegistryKey>
@@ -62,13 +59,13 @@
                     </RegistryKey>
                 </RegistryKey>
             </Component>
-            <Component Id="Microsoft.Toolkit.Uwp.Notifications.dll" Guid="072a6509-8522-412c-ae32-0dda934e99a6">
+            <Component Id="Microsoft.Toolkit.Uwp.Notifications.dll" Guid="cb1c4374-69af-426d-8ffd-61b3d0eeed4a">
                 <File Id="Microsoft.Toolkit.Uwp.Notifications.dll" Name="Microsoft.Toolkit.Uwp.Notifications.dll" Source="$(var.DesktopToastsApp.TargetDir)Microsoft.Toolkit.Uwp.Notifications.dll"/>
             </Component>
-            <Component Id="QueryString.NETCore.dll" Guid="e0baeb94-7368-40d6-89d5-3e803024925d">
+            <Component Id="QueryString.NETCore.dll" Guid="c26e297d-5f1d-4693-a6bf-2523cf9a4661">
                 <File Id="QueryString.NETCore.dll" Name="QueryString.NETCore.dll" Source="$(var.DesktopToastsApp.TargetDir)QueryString.NETCore.dll"/>
             </Component>
-            <Component Id="System.Xml.ReaderWriter.dll" Guid="6fd0ef34-c8b1-462c-a36b-93c5e6be5ebc">
+            <Component Id="System.Xml.ReaderWriter.dll" Guid="1e8748ce-44b6-4c2c-af57-31b335b5515f">
                 <File Id="System.Xml.ReaderWriter.dll" Name="System.Xml.ReaderWriter.dll" Source="$(var.DesktopToastsApp.TargetDir)System.Xml.ReaderWriter.dll"/>
             </Component>
 
