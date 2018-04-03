@@ -27,7 +27,7 @@ namespace DesktopToastsApp
     public partial class App : Application
     {
 #if COM
-        private const string AUMID = "WindowsNotifications.DesktopToasts";
+        private const string AUMID = "WindowsNotifications.DesktopToastsCom";
 #else
         private const string AUMID = "WindowsNotifications.DesktopToastsNoCom";
 #endif

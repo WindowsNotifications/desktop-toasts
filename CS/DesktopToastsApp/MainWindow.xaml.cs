@@ -337,7 +337,7 @@ namespace DesktopToastsApp
             Application.Current.Dispatcher.Invoke(delegate
             {
                 MyNotificationActivator.CreateWindowIfNeeded();
-                ShowMessage("Activated event fired");
+                ShowMessage("Event activated");
             });
         }
     }
