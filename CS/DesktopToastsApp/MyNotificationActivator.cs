@@ -26,9 +26,11 @@ using Windows.UI.Notifications;
 namespace DesktopToastsApp
 {
     // The GUID CLSID must be unique to your app. Create a new GUID if copying this code.
+#if COM
     [ClassInterface(ClassInterfaceType.None)]
     [ComSourceInterfaces(typeof(INotificationActivationCallback))]
-    [Guid("50cfb67f-bc8a-477d-938c-93cf6bfb3320"), ComVisible(true)]
+    [Guid("658a651e-47a9-4ef5-9add-a0577a66dd4c"), ComVisible(true)]
+#endif
     public class MyNotificationActivator : NotificationActivator
     {
         public override void OnActivated(string arguments, NotificationUserInput userInput, string appUserModelId)
