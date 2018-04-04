@@ -195,13 +195,10 @@ namespace DesktopToastsApp
         private async void PopToast()
         {
             string comFlavor;
-            string protocolBaseUrl;
 #if COM
             comFlavor = "COM";
-            protocolBaseUrl = "desktopToastsCom";
 #else
             comFlavor = "No COM";
-            protocolBaseUrl = "desktopToastsNoCom";
 #endif
 
             string appFlavor = "Win32";
@@ -233,7 +230,7 @@ namespace DesktopToastsApp
                 ToastContent toastContent = new ToastContent()
                 {
                     // Arguments when the user taps body of toast
-                    Launch = toastFlavor == "Protocol" ? $"{protocolBaseUrl}:///viewConversation" : new QueryString()
+                    Launch = toastFlavor == "Protocol" ? $"{App.BASE_URL}///viewConversation" : new QueryString()
                     {
                         { "action", "viewConversation" },
                         { "conversationId", conversationId.ToString() }

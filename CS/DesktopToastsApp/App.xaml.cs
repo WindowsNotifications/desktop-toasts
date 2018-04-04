@@ -32,6 +32,12 @@ namespace DesktopToastsApp
         private const string AUMID = "WindowsNotifications.DesktopToastsNoCom";
 #endif
 
+#if COM
+        public const string BASE_URL = "desktopToastsCom:";
+#else
+        public const string BASE_URL = "desktopToastsNoCom:";
+#endif
+
         protected override void OnStartup(StartupEventArgs e)
         {
             SingleApplication.Run(delegate
@@ -56,7 +62,7 @@ namespace DesktopToastsApp
                     // and will show a window if necessary.
                 }
 
-                else if (args.StartsWith("desktopToasts:", StringComparison.CurrentCultureIgnoreCase))
+                else if (args.StartsWith(BASE_URL, StringComparison.CurrentCultureIgnoreCase))
                 {
                     MyNotificationActivator.CreateWindowIfNeeded();
 

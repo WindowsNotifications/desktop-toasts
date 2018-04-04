@@ -67,7 +67,7 @@
             <CheckBox
                 Grid.Row="1"
                 x:Name="CheckBoxUseEventHandler"
-                Content="Use Activated event handler"
+                Content="Use event handler (Activated)"
                 Margin="0,6,0,0"/>
 
         </StackPanel>
