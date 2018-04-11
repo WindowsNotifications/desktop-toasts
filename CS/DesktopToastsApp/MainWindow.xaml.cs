@@ -46,6 +46,8 @@ namespace DesktopToastsApp
 
 #if COM
             Title = "Desktop Toasts COM";
+#elif DUMMYCOM
+            Title = "Desktop Toasts DUMMY COM";
 #else
             Title = "Desktop Toasts No COM";
 #endif
@@ -197,6 +199,8 @@ namespace DesktopToastsApp
             string comFlavor;
 #if COM
             comFlavor = "COM";
+#elif DUMMYCOM
+            comFlavor = "Dummy COM";
 #else
             comFlavor = "No COM";
 #endif

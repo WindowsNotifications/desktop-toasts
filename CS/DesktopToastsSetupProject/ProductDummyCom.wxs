@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Name="DesktopToastsDummyComSetupProject" Language="1033" Version="1.0.0.0" Manufacturer="Windows Notifications" UpgradeCode="a322476b-bccf-4d71-bb75-46762780040b">
+        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+        <MediaTemplate />
+
+        <Feature Id="ProductFeature" Title="DesktopToastsDummyComSetupProject" Level="1">
+            <ComponentGroupRef Id="ProductComponents" />
+        </Feature>
+    </Product>
+
+    <Fragment>
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFilesFolder">
+                <Directory Id="INSTALLFOLDER" Name="DesktopToastsDummyComSetupProject" />
+            </Directory>
+            <Directory Id="ProgramMenuFolder">
+            </Directory>
+        </Directory>
+    </Fragment>
+
+    <Fragment>
+        <DirectoryRef Id="ProgramMenuFolder">
+            <Component Id="ApplicationShortcut" Guid="0c3a66e1-0cbd-4d1e-a280-e39a288f6c06">
+                <Shortcut Id="ApplicationStartMenuShortcut" Name="Desktop Toasts DUMMY COM" Description="Desktop Toasts Dummy COM Sample" Target="[INSTALLFOLDER]DesktopToastsApp.exe" WorkingDirectory="INSTALLFOLDER">
+
+                    <!--AUMID-->
+                    <ShortcutProperty Key="System.AppUserModel.ID" Value="WindowsNotifications.DesktopToastsDummyCom"/>
+
+                    <!--Dummy COM CLSID, this is a random GUID backed by nothing-->
+                    <ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{7e2b1b0b-2c77-4407-b0a4-bd71c3ccb5aa}"/>
+
+                </Shortcut>
+
+                <RemoveFile Id="RemoveApplicationShortcut" Directory="ProgramMenuFolder" Name="Desktop Toasts DUMMY COM" On="uninstall"/>
+                <RegistryValue Root="HKCU" Key="Software\DesktopToastsDummyCom" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+            </Component>
+        </DirectoryRef>
+    </Fragment>
+
+    <Fragment>
+        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+            <!-- TODO: Remove the comments around this Component element and the ComponentRef below in order to add resources to this installer. -->
+            <!-- <Component Id="ProductComponent"> -->
+            <!-- TODO: Insert files, registry keys, and other resources here. -->
+            <!-- </Component> -->
+            <Component Id="DesktopToastsApp.exe" Guid="30a0d538-f20b-404e-b0c9-15d1aec6269a">
+                <File Id="DesktopToastsApp.exe" Name="DesktopToastsApp.exe" Source="$(var.DesktopToastsApp.TargetDir)DesktopToastsApp.exe"/>
+
+                <RegistryKey Root="HKCR"
+                 Key="desktopToastsDummyCom"
+                 Action="createAndRemoveOnUninstall">
+                    <RegistryValue Type="string" Name="URL Protocol" Value=""/>
+                    <RegistryValue Type="string" Value="URL:Desktop Toasts Dummy COM protocol"/>
+                    <RegistryKey Key="DefaultIcon">
+                        <RegistryValue Type="string" Value="DesktopToastsApp.exe" />
+                    </RegistryKey>
+                    <RegistryKey Key="shell\open\command">
+                        <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]DesktopToastsApp.exe&quot; &quot;%1&quot;" />
+                    </RegistryKey>
+                </RegistryKey>
+            </Component>
+            <Component Id="Microsoft.Toolkit.Uwp.Notifications.dll" Guid="87638670-07cb-41ed-9ee0-766246cc13a8">
+                <File Id="Microsoft.Toolkit.Uwp.Notifications.dll" Name="Microsoft.Toolkit.Uwp.Notifications.dll" Source="$(var.DesktopToastsApp.TargetDir)Microsoft.Toolkit.Uwp.Notifications.dll"/>
+            </Component>
+            <Component Id="QueryString.NETCore.dll" Guid="625c589c-591f-4c10-9c88-9eb61aec0612">
+                <File Id="QueryString.NETCore.dll" Name="QueryString.NETCore.dll" Source="$(var.DesktopToastsApp.TargetDir)QueryString.NETCore.dll"/>
+            </Component>
+            <Component Id="System.Xml.ReaderWriter.dll" Guid="78236611-8e41-445a-a7d7-6c44036c26c8">
+                <File Id="System.Xml.ReaderWriter.dll" Name="System.Xml.ReaderWriter.dll" Source="$(var.DesktopToastsApp.TargetDir)System.Xml.ReaderWriter.dll"/>
+            </Component>
+
+            <!--Tell WiX to install the shortcut-->
+            <ComponentRef Id="ApplicationShortcut"/>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

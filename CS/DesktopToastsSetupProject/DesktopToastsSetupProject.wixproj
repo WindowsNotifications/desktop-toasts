@@ -18,14 +18,29 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
-    <ItemGroup Condition=" '$(Configuration)' == 'Debug No COM' ">
-        <None Include="Product.wxs"/>
-        <Compile Include="ProductNoCom.wxs"/>
-    </ItemGroup>
-    <ItemGroup Condition=" '$(Configuration)' == 'Debug COM' ">
-        <Compile Include="Product.wxs"/>
-        <None Include="ProductNoCom.wxs"/>
-    </ItemGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug Dummy COM' ">
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug Dummy COM' ">
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+  <ItemGroup Condition=" '$(Configuration)' == 'Debug No COM' ">
+    <None Include="Product.wxs" />
+    <Compile Include="ProductNoCom.wxs" />
+    <None Include="ProductDummyCom.wxs" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(Configuration)' == 'Debug COM' ">
+    <Compile Include="Product.wxs" />
+    <None Include="ProductNoCom.wxs" />
+    <None Include="ProductDummyCom.wxs" />
+  </ItemGroup>
+  <ItemGroup Condition=" '$(Configuration)' == 'Debug Dummy COM' ">
+    <None Include="Product.wxs" />
+    <None Include="ProductNoCom.wxs" />
+    <Compile Include="ProductDummyCom.wxs" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DesktopToastsApp\DesktopToastsApp.csproj">
       <Name>DesktopToastsApp</Name>

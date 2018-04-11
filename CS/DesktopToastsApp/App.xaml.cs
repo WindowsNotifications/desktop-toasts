@@ -28,12 +28,16 @@ namespace DesktopToastsApp
     {
 #if COM
         private const string AUMID = "WindowsNotifications.DesktopToastsCom";
+#elif DUMMYCOM
+        private const string AUMID = "WindowsNotifications.DesktopToastsDummyCom";
 #else
         private const string AUMID = "WindowsNotifications.DesktopToastsNoCom";
 #endif
 
 #if COM
         public const string BASE_URL = "desktopToastsCom:";
+#elif DUMMYCOM
+        public const string BASE_URL = "desktopToastsDummyCom:";
 #else
         public const string BASE_URL = "desktopToastsNoCom:";
 #endif
