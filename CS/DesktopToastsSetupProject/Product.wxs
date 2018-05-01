@@ -25,7 +25,7 @@
         <DirectoryRef Id="ProgramMenuFolder">
             <Component Id="ApplicationShortcut" Guid="cab7a51a-c2c3-49d8-ab6e-f7bb38fd7f57">
                 <Shortcut Id="ApplicationStartMenuShortcut" Name="Desktop Toasts COM" Description="Desktop Toasts COM Sample" Target="[INSTALLFOLDER]DesktopToastsApp.exe" WorkingDirectory="INSTALLFOLDER">
-
+                  
                     <!--AUMID-->
                     <ShortcutProperty Key="System.AppUserModel.ID" Value="WindowsNotifications.DesktopToastsCom"/>
 

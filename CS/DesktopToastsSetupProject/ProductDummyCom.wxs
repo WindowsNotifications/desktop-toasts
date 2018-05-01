@@ -24,7 +24,9 @@
     <Fragment>
         <DirectoryRef Id="ProgramMenuFolder">
             <Component Id="ApplicationShortcut" Guid="0c3a66e1-0cbd-4d1e-a280-e39a288f6c06">
-                <Shortcut Id="ApplicationStartMenuShortcut" Name="Desktop Toasts DUMMY COM" Description="Desktop Toasts Dummy COM Sample" Target="[INSTALLFOLDER]DesktopToastsApp.exe" WorkingDirectory="INSTALLFOLDER">
+                <Shortcut Id="ApplicationStartMenuShortcut" Name="Desktop Toasts DUMMY COM" Description="Desktop Toasts Dummy COM Sample" Target="[INSTALLFOLDER]chrome.exe" WorkingDirectory="INSTALLFOLDER">
+
+                  <!--<Icon Id="Icon" SourceFile="$(var.DesktopToastsApp.TargetDir)Facebook.ico"/>-->
 
                     <!--AUMID-->
                     <ShortcutProperty Key="System.AppUserModel.ID" Value="WindowsNotifications.DesktopToastsDummyCom"/>
