@@ -31,8 +31,12 @@ namespace DesktopToastsApp
     [ComSourceInterfaces(typeof(INotificationActivationCallback))]
     [Guid("658a651e-47a9-4ef5-9add-a0577a66dd4c"), ComVisible(true)]
 #endif
-    public class MyNotificationActivator : NotificationActivator
+    public class MyNotificationActivator
+#if COM
+        : NotificationActivator
+#endif
     {
+#if COM
         public override void OnActivated(string arguments, NotificationUserInput userInput, string appUserModelId)
         {
             Application.Current.Dispatcher.Invoke(delegate
@@ -118,15 +122,6 @@ namespace DesktopToastsApp
             });
         }
 
-        public static void CreateWindowIfNeeded()
-        {
-            // Make sure we have a window open (in case user clicked toast while app closed)
-            if (App.Current.Windows.Count == 0)
-            {
-                new MainWindow().Show();
-            }
-        }
-
         private void ShowToast(string msg)
         {
             // Construct the visuals of the toast
@@ -158,6 +153,16 @@ namespace DesktopToastsApp
 
             // And then show it
             DesktopNotificationManagerCompat.CreateToastNotifier().Show(toast);
+        }
+#endif
+
+        public static void CreateWindowIfNeeded()
+        {
+            // Make sure we have a window open (in case user clicked toast while app closed)
+            if (App.Current.Windows.Count == 0)
+            {
+                new MainWindow().Show();
+            }
         }
     }
 }

@@ -36,7 +36,9 @@ namespace DesktopNotifications
         /// </summary>
         /// <param name="aumid">An AUMID that uniquely identifies your application.</param>
         public static void RegisterAumidAndComServer<T>(string aumid)
+#if COM
             where T : NotificationActivator
+#endif
         {
             if (string.IsNullOrWhiteSpace(aumid))
             {
@@ -64,6 +66,7 @@ namespace DesktopNotifications
             _registeredAumidAndComServer = true;
         }
 
+#if COM
         private static void RegisterComServer<T>(String exePath)
             where T : NotificationActivator
         {
@@ -75,13 +78,16 @@ namespace DesktopNotifications
             // We also wrap EXE path in quotes for extra security
             key.SetValue(null, '"' + exePath + '"' + " " + TOAST_ACTIVATED_LAUNCH_ARG);
         }
+#endif
 
         /// <summary>
         /// Registers the activator type as a COM server client so that Windows can launch your activator.
         /// </summary>
         /// <typeparam name="T">Your implementation of NotificationActivator. Must have GUID and ComVisible attributes on class.</typeparam>
         public static void RegisterActivator<T>()
+#if COM
             where T : NotificationActivator
+#endif
         {
 #if COM
             // Register type
@@ -148,12 +154,14 @@ namespace DesktopNotifications
                 }
             }
 
+#if COM
             // If not registered activator yet
-            //if (!_registeredActivator)
-            //{
-            //    // Incorrect usage
-            //    throw new Exception("You must call RegisterActivator first.");
-            //}
+            if (!_registeredActivator)
+            {
+                // Incorrect usage
+                throw new Exception("You must call RegisterActivator first.");
+            }
+#endif
         }
 
         /// <summary>
@@ -301,6 +309,7 @@ namespace DesktopNotifications
         }
     }
 
+#if COM
     /// <summary>
     /// Apps must implement this activator to handle notification activation.
     /// </summary>
@@ -399,4 +408,5 @@ namespace DesktopNotifications
             return GetEnumerator();
         }
     }
+#endif
 }
