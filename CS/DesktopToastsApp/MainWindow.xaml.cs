@@ -319,6 +319,8 @@ namespace DesktopToastsApp
                 doc = ToastNotificationManager.GetTemplateContent(ToastTemplateType.ToastText01);
                 XmlNodeList toastTextElements = doc.GetElementsByTagName("text");
                 toastTextElements[0].AppendChild(doc.CreateTextNode(title));
+
+                (doc.GetElementsByTagName("toast")[0] as XmlElement).SetAttribute("launch", "legacyToastLaunchArgs");
             }
 
             // And create the toast notification
