@@ -457,7 +457,7 @@ HRESULT DesktopToastsApp::ShowToast(IXmlDocument* xml)
 
     // And create the notification itself
     ComPtr<IToastNotification> toast;
-    RETURN_IF_FAILED(MakeAndInitialize<ToastNotification>(&toast, xml));
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::CreateToastNotification(xml, &toast));
 
     // And show it!
     return notifier->Show(toast.Get());

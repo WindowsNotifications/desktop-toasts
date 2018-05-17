@@ -131,7 +131,7 @@ namespace DesktopNotificationManagerCompat
     HRESULT CreateXmlDocumentFromString(const wchar_t *xmlString, IXmlDocument **doc)
     {
         ComPtr<IXmlDocument> answer;
-        MakeAndInitialize<XmlDocument>(&answer);
+        RETURN_IF_FAILED(Windows::Foundation::ActivateInstance(HStringReference(RuntimeClass_Windows_Data_Xml_Dom_XmlDocument).Get(), &answer));
 
         ComPtr<IXmlDocumentIO> docIO;
         RETURN_IF_FAILED(answer.As(&docIO));
@@ -140,6 +140,16 @@ namespace DesktopNotificationManagerCompat
         RETURN_IF_FAILED(docIO->LoadXml(HStringReference(xmlString).Get()));
 
         return answer.CopyTo(doc);
+    }
+
+    HRESULT CreateToastNotification(IXmlDocument *content, IToastNotification **notification)
+    {
+        ComPtr<IToastNotificationFactory> factory;
+        RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(
+            HStringReference(RuntimeClass_Windows_UI_Notifications_ToastNotification).Get(),
+            &factory));
+
+        return factory->CreateToastNotification(content, notification);
     }
 
     HRESULT get_History(std::unique_ptr<DesktopNotificationHistoryCompat>* history)
