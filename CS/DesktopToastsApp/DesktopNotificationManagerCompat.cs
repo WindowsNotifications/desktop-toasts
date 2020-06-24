@@ -36,6 +36,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  * */
 
+using Microsoft.Win32;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -62,7 +63,7 @@ namespace DesktopNotifications
         /// under Desktop Bridge. Call this upon application startup, before calling any other APIs.
         /// </summary>
         /// <param name="aumid">An AUMID that uniquely identifies your application.</param>
-        public static void RegisterAumidAndComServer<T>(string aumid)
+        public static void RegisterApplication<T>(string aumid, string displayName, string iconPath)
             where T : NotificationActivator
         {
             if (string.IsNullOrWhiteSpace(aumid))
@@ -85,6 +86,15 @@ namespace DesktopNotifications
 
             String exePath = Process.GetCurrentProcess().MainModule.FileName;
             RegisterComServer<T>(exePath);
+
+            using (var rootKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\AppUserModelId\" + aumid))
+            {
+                rootKey.SetValue("DisplayName", displayName);
+                rootKey.SetValue("CustomActivator", string.Format("{{{0}}}", typeof(T).GUID));
+                rootKey.SetValue("IconBackgroundColor", "FFDDDDDD"); // Only appears in the settings page, always setting to light gray since app icon is known to work well on light gray anyways since that's how it appears in Action Center
+
+                rootKey.Flush();
+            }
 
             _registeredAumidAndComServer = true;
         }
