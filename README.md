@@ -17,12 +17,8 @@ Toasts will work out-of-the-gate thanks to Desktop Bridge!
 
 ## Classic Win32
 
-1. Install WiX Toolset if you haven't yet
-2. Open the project in VS
-3. Build the SetupProject
-4. Install the generated MSI from the bin/Debug folder
-5. Launch the Desktop Toasts app from the Start menu
+1. Open the project in VS
+2. Set the `DesktopToastsApp` as the startup project
+3. Deploy
 
-After you've installed with the MSI once, you can debug straight from Visual Studio. Installing via the MSI creates the Start menu shortcut with the AUMID and COM CLSID so your notifications can appear and be actionable.
-
-If you don't install the MSI first, toasts will not appear.
+Toasts will work out-of-the-gate thanks to using registry registration!
