@@ -60,7 +60,7 @@ namespace DesktopNotifications
         /// <summary>
         /// If you're not using MSIX or sparse packages, you must call this method to register your AUMID with the Compat library and to
         /// register your COM CLSID and EXE in LocalServer32 registry. Feel free to call this regardless, and we will no-op if running
-        /// under Desktop Bridge. Call this upon application startup, before calling any other APIs.
+        /// under Desktop Bridge. Call this upon application startup, before calling any other APIs. Note that the display name and icon will NOT update if changed until either all toasts are cleared, or the system is rebooted.
         /// </summary>
         /// <param name="aumid">An AUMID that uniquely identifies your application.</param>
         public static void RegisterApplication<T>(string aumid, string displayName, string iconPath)
