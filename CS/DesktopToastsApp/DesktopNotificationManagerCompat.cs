@@ -36,12 +36,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
  * */
 
+using Microsoft.Win32;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Text;
 using Windows.UI.Notifications;
 using static DesktopNotifications.NotificationActivator;
@@ -93,13 +95,33 @@ namespace DesktopNotifications
             where T : NotificationActivator
         {
             // We register the EXE to start up when the notification is activated
-            string regString = String.Format("SOFTWARE\\Classes\\CLSID\\{{{0}}}\\LocalServer32", typeof(T).GUID);
-            var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(regString);
+            string regString = String.Format("SOFTWARE\\Classes\\CLSID\\{{{0}}}", typeof(T).GUID);
+            using (var key = Registry.CurrentUser.CreateSubKey(regString))
+            {
+                // Include a flag so we know this was a toast activation and should wait for COM to process
+                // We also wrap EXE path in quotes for extra security
+                key.SetValue("LocalServer32", '"' + exePath + '"' + " " + TOAST_ACTIVATED_LAUNCH_ARG);
+            }
 
-            // Include a flag so we know this was a toast activation and should wait for COM to process
-            // We also wrap EXE path in quotes for extra security
-            key.SetValue(null, '"' + exePath + '"' + " " + TOAST_ACTIVATED_LAUNCH_ARG);
-        }
+            if (IsElevated)
+            {
+                // For elevated apps, we need to ensure they'll activate in existing running process by adding
+                // some values in local machine
+                using (var key = Registry.LocalMachine.CreateSubKey(regString))
+                {
+                    // Same as above, except also including AppId to link to our AppId entry below
+                    key.SetValue("LocalServer32", '"' + exePath + '"' + " " + TOAST_ACTIVATED_LAUNCH_ARG);
+                    key.SetValue("AppId", "{" + typeof(T).GUID + "}");
+                }
+
+                // This tells COM to match any client, so Action Center will activate our elevated process.
+                // More info: https://docs.microsoft.com/windows/win32/com/runas
+                using (var key = Registry.LocalMachine.CreateSubKey(String.Format("SOFTWARE\\Classes\\AppID\\{{{0}}}", typeof(T).GUID)))
+                {
+                    key.SetValue("RunAs", "Interactive User");
+                }
+            }
+    }
 
         /// <summary>
         /// Registers the activator type as a COM server client so that Windows can launch your activator.
@@ -234,6 +256,14 @@ namespace DesktopNotifications
         /// Gets a boolean representing whether http images can be used within toasts. This is true if running with package identity (MSIX or sparse package).
         /// </summary>
         public static bool CanUseHttpImages { get { return DesktopBridgeHelpers.IsRunningAsUwp(); } }
+
+        private static bool IsElevated
+        {
+            get
+            {
+                return new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+            }
+        }
 
         /// <summary>
         /// Code from https://github.com/qmatteoq/DesktopBridgeHelpers/edit/master/DesktopBridge.Helpers/Helpers.cs
