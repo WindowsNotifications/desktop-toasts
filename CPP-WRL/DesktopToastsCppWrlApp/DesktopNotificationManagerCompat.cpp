@@ -20,19 +20,19 @@ using namespace ABI::Windows::Data::Xml::Dom;
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Wrappers;
 
+
+bool s_registeredAumidAndComServer = false;
+std::wstring s_aumid;
+bool s_registeredActivator = false;
+
+HRESULT EnsureRegistered();
+bool IsRunningAsUwp();
+
 namespace DesktopNotificationManagerCompat
 {
     HRESULT RegisterComServer(GUID clsid, const wchar_t exePath[]);
-    HRESULT EnsureRegistered();
-    bool IsRunningAsUwp();
 
-    bool s_registeredAumidAndComServer = false;
-    std::wstring s_aumid;
-    bool s_registeredActivator = false;
-    bool s_hasCheckedIsRunningAsUwp = false;
-    bool s_isRunningAsUwp = false;
-
-    HRESULT RegisterAumidAndComServer(const wchar_t *aumid, GUID clsid)
+    HRESULT RegisterApplication(const wchar_t* aumid, const wchar_t* displayName, const wchar_t* iconPath)
     {
         // If running as Desktop Bridge
         if (IsRunningAsUwp())
@@ -48,20 +48,78 @@ namespace DesktopNotificationManagerCompat
         // Copy the aumid
         s_aumid = std::wstring(aumid);
 
-        // Get the EXE path
-        wchar_t exePath[MAX_PATH];
-        DWORD charWritten = ::GetModuleFileName(nullptr, exePath, ARRAYSIZE(exePath));
-        RETURN_IF_FAILED(charWritten > 0 ? S_OK : HRESULT_FROM_WIN32(::GetLastError()));
+        // Create the registry entry
+        std::wstring regKey = LR"(SOFTWARE\Classes\AppUserModelId\)" + s_aumid;
 
-        // Register the COM server
-        RETURN_IF_FAILED(RegisterComServer(clsid, exePath));
+        // Set display name
+        RETURN_IF_FAILED(HRESULT_FROM_WIN32(::RegSetKeyValue(
+            HKEY_CURRENT_USER,
+            regKey.c_str(),
+            L"DisplayName",
+            REG_SZ,
+            reinterpret_cast<const BYTE*>(displayName),
+            static_cast<DWORD>((wcslen(displayName) + 1) * sizeof(WCHAR)))));
+
+        // Set icon
+        RETURN_IF_FAILED(HRESULT_FROM_WIN32(::RegSetKeyValue(
+            HKEY_CURRENT_USER,
+            regKey.c_str(),
+            L"IconUri",
+            REG_SZ,
+            reinterpret_cast<const BYTE*>(iconPath),
+            static_cast<DWORD>((wcslen(iconPath) + 1) * sizeof(WCHAR)))));
+
+        // Set icon background color. Only appears in the settings page, always setting to light gray since app icon is known to work well on light gray anyways since that's how it appears in Action Center
+        RETURN_IF_FAILED(HRESULT_FROM_WIN32(::RegSetKeyValue(
+            HKEY_CURRENT_USER,
+            regKey.c_str(),
+            L"IconBackgroundColor",
+            REG_SZ,
+            reinterpret_cast<const BYTE*>(L"FFDDDDDD"),
+            static_cast<DWORD>((wcslen(L"FFDDDDDD") + 1) * sizeof(WCHAR)))));
 
         s_registeredAumidAndComServer = true;
         return S_OK;
     }
 
-    HRESULT RegisterActivator()
+    HRESULT RegisterActivator(GUID clsid)
     {
+        if (!IsRunningAsUwp())
+        {
+            if (!s_registeredAumidAndComServer)
+            {
+                // Must call RegisterApplication first
+                return E_ILLEGAL_METHOD_CALL;
+            }
+
+            // Get the EXE path
+            wchar_t exePath[MAX_PATH];
+            DWORD charWritten = ::GetModuleFileName(nullptr, exePath, ARRAYSIZE(exePath));
+            RETURN_IF_FAILED(charWritten > 0 ? S_OK : HRESULT_FROM_WIN32(::GetLastError()));
+
+            // Register the COM server
+            RETURN_IF_FAILED(RegisterComServer(clsid, exePath));
+
+            // Update the CustomActivator
+            std::wstring regKey = LR"(SOFTWARE\Classes\AppUserModelId\)" + s_aumid;
+
+            // Turn the GUID into a string
+            OLECHAR* clsidOlechar;
+            StringFromCLSID(clsid, &clsidOlechar);
+            std::wstring clsidStr(clsidOlechar);
+            ::CoTaskMemFree(clsidOlechar);
+            const wchar_t* clsidStrForReg = clsidStr.c_str();
+
+            // Register the activator
+            RETURN_IF_FAILED(HRESULT_FROM_WIN32(::RegSetKeyValue(
+                HKEY_CURRENT_USER,
+                regKey.c_str(),
+                L"CustomActivator",
+                REG_SZ,
+                reinterpret_cast<const BYTE*>(clsidStrForReg),
+                static_cast<DWORD>((wcslen(clsidStrForReg) + 1) * sizeof(WCHAR)))));
+        }
+
         // Module<OutOfProc> needs a callback registered before it can be used.
         // Since we don't care about when it shuts down, we'll pass an empty lambda here.
         Module<OutOfProc>::Create([] {});
@@ -108,8 +166,11 @@ namespace DesktopNotificationManagerCompat
             reinterpret_cast<const BYTE*>(exePathStr.c_str()),
             dataSize));
     }
+}
 
-    HRESULT CreateToastNotifier(IToastNotifier **notifier)
+namespace ToastNotificationManagerCompat
+{
+    HRESULT CreateToastNotifier(IToastNotifier** notifier)
     {
         RETURN_IF_FAILED(EnsureRegistered());
 
@@ -128,7 +189,7 @@ namespace DesktopNotificationManagerCompat
         }
     }
 
-    HRESULT CreateXmlDocumentFromString(const wchar_t *xmlString, IXmlDocument **doc)
+    HRESULT CreateXmlDocumentFromString(const wchar_t* xmlString, IXmlDocument** doc)
     {
         ComPtr<IXmlDocument> answer;
         RETURN_IF_FAILED(Windows::Foundation::ActivateInstance(HStringReference(RuntimeClass_Windows_Data_Xml_Dom_XmlDocument).Get(), &answer));
@@ -142,7 +203,7 @@ namespace DesktopNotificationManagerCompat
         return answer.CopyTo(doc);
     }
 
-    HRESULT CreateToastNotification(IXmlDocument *content, IToastNotification **notification)
+    HRESULT CreateToastNotification(IXmlDocument* content, IToastNotification** notification)
     {
         ComPtr<IToastNotificationFactory> factory;
         RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(
@@ -175,49 +236,51 @@ namespace DesktopNotificationManagerCompat
     {
         return IsRunningAsUwp();
     }
+}
 
-    HRESULT EnsureRegistered()
+HRESULT EnsureRegistered()
+{
+    // If not registered AUMID yet
+    if (!s_registeredAumidAndComServer)
     {
-        // If not registered AUMID yet
-        if (!s_registeredAumidAndComServer)
+        // Check if Desktop Bridge
+        if (IsRunningAsUwp())
         {
-            // Check if Desktop Bridge
-            if (IsRunningAsUwp())
-            {
-                // Implicitly registered, all good!
-                s_registeredAumidAndComServer = true;
-            }
-            else
-            {
-                // Otherwise, incorrect usage, must call RegisterAumidAndComServer first
-                return E_ILLEGAL_METHOD_CALL;
-            }
+            // Implicitly registered, all good!
+            s_registeredAumidAndComServer = true;
         }
-
-        // If not registered activator yet
-        if (!s_registeredActivator)
+        else
         {
-            // Incorrect usage, must call RegisterActivator first
+            // Otherwise, incorrect usage, must call RegisterAumidAndComServer first
             return E_ILLEGAL_METHOD_CALL;
         }
-
-        return S_OK;
     }
 
-    bool IsRunningAsUwp()
+    // If not registered activator yet
+    if (!s_registeredActivator)
     {
-        if (!s_hasCheckedIsRunningAsUwp)
-        {
-            // https://stackoverflow.com/questions/39609643/determine-if-c-application-is-running-as-a-uwp-app-in-desktop-bridge-project
-            UINT32 length;
-            wchar_t packageFamilyName[PACKAGE_FAMILY_NAME_MAX_LENGTH + 1];
-            LONG result = GetPackageFamilyName(GetCurrentProcess(), &length, packageFamilyName);
-            s_isRunningAsUwp = result == ERROR_SUCCESS;
-            s_hasCheckedIsRunningAsUwp = true;
-        }
-
-        return s_isRunningAsUwp;
+        // Incorrect usage, must call RegisterActivator first
+        return E_ILLEGAL_METHOD_CALL;
     }
+
+    return S_OK;
+}
+
+bool s_hasCheckedIsRunningAsUwp = false;
+bool s_isRunningAsUwp = false;
+bool IsRunningAsUwp()
+{
+    if (!s_hasCheckedIsRunningAsUwp)
+    {
+        // https://stackoverflow.com/questions/39609643/determine-if-c-application-is-running-as-a-uwp-app-in-desktop-bridge-project
+        UINT32 length;
+        wchar_t packageFamilyName[PACKAGE_FAMILY_NAME_MAX_LENGTH + 1];
+        LONG result = GetPackageFamilyName(GetCurrentProcess(), &length, packageFamilyName);
+        s_isRunningAsUwp = result == ERROR_SUCCESS;
+        s_hasCheckedIsRunningAsUwp = true;
+    }
+
+    return s_isRunningAsUwp;
 }
 
 DesktopNotificationHistoryCompat::DesktopNotificationHistoryCompat(const wchar_t *aumid, ComPtr<IToastNotificationHistory> history)

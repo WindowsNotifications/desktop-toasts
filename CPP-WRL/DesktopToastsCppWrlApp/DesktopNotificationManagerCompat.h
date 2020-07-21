@@ -25,19 +25,20 @@ class DesktopNotificationHistoryCompat;
 namespace DesktopNotificationManagerCompat
 {
     /// <summary>
-    /// If not running under the Desktop Bridge, you must call this method to register your AUMID with the Compat library and to
-    /// register your COM CLSID and EXE in LocalServer32 registry. Feel free to call this regardless, and we will no-op if running
+    /// If not running under MSIX/sparse, you must call this method to register your application with the notification
+    /// platform and with the compat library. Feel free to call this regardless, and we will no-op if running
     /// under Desktop Bridge. Call this upon application startup, before calling any other APIs.
     /// </summary>
-    /// <param name="aumid">An AUMID that uniquely identifies your application.</param>
-    /// <param name="clsid">The CLSID of your NotificationActivator class.</param>
-    HRESULT RegisterAumidAndComServer(const wchar_t *aumid, GUID clsid);
+    HRESULT RegisterApplication(const wchar_t *aumid, const wchar_t *displayName, const wchar_t *iconPath);
 
     /// <summary>
     /// Registers your module to handle COM activations. Call this upon application startup.
     /// </summary>
-    HRESULT RegisterActivator();
+    HRESULT RegisterActivator(GUID clsid);
+}
 
+namespace ToastNotificationManagerCompat
+{
     /// <summary>
     /// Creates a toast notifier. You must have called RegisterActivator first (and also RegisterAumidAndComServer if you're a classic Win32 app), or this will throw an exception.
     /// </summary>
@@ -46,7 +47,7 @@ namespace DesktopNotificationManagerCompat
     /// <summary>
     /// Creates an XmlDocument initialized with the specified string. This is simply a convenience helper method.
     /// </summary>
-    HRESULT CreateXmlDocumentFromString(const wchar_t *xmlString, ABI::Windows::Data::Xml::Dom::IXmlDocument** doc);
+    HRESULT CreateXmlDocumentFromString(const wchar_t* xmlString, ABI::Windows::Data::Xml::Dom::IXmlDocument** doc);
 
     /// <summary>
     /// Creates a toast notification. This is simply a convenience helper method.

@@ -186,10 +186,10 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPWSTR cm
     RETURN_IF_FAILED(winRtInitializer);
 
     // Register AUMID and COM server (for Desktop Bridge apps, this no-ops)
-    RETURN_IF_FAILED(DesktopNotificationManagerCompat::RegisterAumidAndComServer(L"WindowsNotifications.DesktopToastsCpp", __uuidof(NotificationActivator)));
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::RegisterApplication(L"WindowsNotifications.DesktopToastsCpp", L"C++ toasts", L"C:\\icon.png"));
 
     // Register activator type
-    RETURN_IF_FAILED(DesktopNotificationManagerCompat::RegisterActivator());
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::RegisterActivator(__uuidof(NotificationActivator)));
 
     // Create our desktop app
     DesktopToastsApp app;
@@ -359,7 +359,7 @@ _Use_decl_annotations_
 HRESULT DesktopToastsApp::CreateToastXml(IXmlDocument **toastXml)
 {
     ComPtr<IXmlDocument> doc;
-    RETURN_IF_FAILED(DesktopNotificationManagerCompat::CreateXmlDocumentFromString(LR"(<toast launch="action=viewConversation&amp;conversationId=5">
+    RETURN_IF_FAILED(ToastNotificationManagerCompat::CreateXmlDocumentFromString(LR"(<toast launch="action=viewConversation&amp;conversationId=5">
     <visual>
         <binding template="ToastGeneric">
             <text></text>
@@ -453,11 +453,11 @@ HRESULT DesktopToastsApp::ShowToast(IXmlDocument* xml)
     // Create the notifier
     // Classic Win32 apps MUST use the compat method to create the notifier
     ComPtr<IToastNotifier> notifier;
-    RETURN_IF_FAILED(DesktopNotificationManagerCompat::CreateToastNotifier(&notifier));
+    RETURN_IF_FAILED(ToastNotificationManagerCompat::CreateToastNotifier(&notifier));
 
     // And create the notification itself
     ComPtr<IToastNotification> toast;
-    RETURN_IF_FAILED(DesktopNotificationManagerCompat::CreateToastNotification(xml, &toast));
+    RETURN_IF_FAILED(ToastNotificationManagerCompat::CreateToastNotification(xml, &toast));
 
     // And show it!
     return notifier->Show(toast.Get());
@@ -470,7 +470,7 @@ HRESULT DesktopToastsApp::ClearToasts()
     // Get the history object
     // Classic Win32 apps MUST use the compat method to obtain history
     std::unique_ptr<DesktopNotificationHistoryCompat> history;
-    RETURN_IF_FAILED(DesktopNotificationManagerCompat::get_History(&history));
+    RETURN_IF_FAILED(ToastNotificationManagerCompat::get_History(&history));
 
     // And clear the toasts
     return history->Clear();
@@ -532,7 +532,7 @@ LRESULT CALLBACK DesktopToastsApp::WndProc(HWND hwnd, UINT32 message, WPARAM wPa
 HRESULT DesktopToastsApp::SendBasicToast(PCWSTR message)
 {
     ComPtr<IXmlDocument> doc;
-    RETURN_IF_FAILED(DesktopNotificationManagerCompat::CreateXmlDocumentFromString(LR"(<toast>
+    RETURN_IF_FAILED(ToastNotificationManagerCompat::CreateXmlDocumentFromString(LR"(<toast>
     <visual>
         <binding template="ToastGeneric">
             <text></text>
