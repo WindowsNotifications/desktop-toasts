@@ -58,17 +58,28 @@ namespace DesktopNotifications
         private static bool _registeredActivator;
 
         /// <summary>
-        /// If you're not using MSIX or sparse packages, you must call this method to register your AUMID with the Compat library and to
+        /// If you're not using UWP, MSIX, or sparse packages, you must call this method to register your AUMID with the Compat library and to
         /// register your COM CLSID and EXE in LocalServer32 registry. Feel free to call this regardless, and we will no-op if running
         /// under Desktop Bridge. Call this upon application startup, before calling any other APIs. Note that the display name and icon will NOT update if changed until either all toasts are cleared, or the system is rebooted.
         /// </summary>
         /// <param name="aumid">An AUMID that uniquely identifies your application.</param>
-        public static void RegisterApplication<T>(string aumid, string displayName, string iconPath)
-            where T : NotificationActivator
+        /// <param name="displayName">Your app's display name, which will appear on toasts and within Action Center.</param>
+        /// <param name="iconPath">Your app's icon, which will appear on toasts and within Action Center.</param>
+        public static void RegisterApplication(string aumid, string displayName, string iconPath)
         {
             if (string.IsNullOrWhiteSpace(aumid))
             {
                 throw new ArgumentException("You must provide an AUMID.", nameof(aumid));
+            }
+
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                throw new ArgumentException("You must provide a display name.", nameof(displayName));
+            }
+
+            if (string.IsNullOrWhiteSpace(iconPath))
+            {
+                throw new ArgumentException("You must provide an icon path.", nameof(iconPath));
             }
 
             // If running as Desktop Bridge
@@ -84,16 +95,11 @@ namespace DesktopNotifications
 
             _aumid = aumid;
 
-            String exePath = Process.GetCurrentProcess().MainModule.FileName;
-            RegisterComServer<T>(exePath);
-
             using (var rootKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\AppUserModelId\" + aumid))
             {
                 rootKey.SetValue("DisplayName", displayName);
-                rootKey.SetValue("CustomActivator", string.Format("{{{0}}}", typeof(T).GUID));
+                rootKey.SetValue("IconUri", iconPath);
                 rootKey.SetValue("IconBackgroundColor", "FFDDDDDD"); // Only appears in the settings page, always setting to light gray since app icon is known to work well on light gray anyways since that's how it appears in Action Center
-
-                rootKey.Flush();
             }
 
             _registeredAumidAndComServer = true;
@@ -112,12 +118,28 @@ namespace DesktopNotifications
         }
 
         /// <summary>
-        /// Registers the activator type as a COM server client so that Windows can launch your activator.
+        /// Registers the activator type as a COM server client so that Windows can launch your activator. If not using UWP/MSIX/sparse, you must call <see cref="RegisterApplication(string, string, string)"/> first.
         /// </summary>
-        /// <typeparam name="T">Your implementation of NotificationActivator. Must have GUID and ComVisible attributes on class.</typeparam>
+        /// <typeparam name="T">Your implementation of <see cref="NotificationActivator"/>. Must have GUID and ComVisible attributes on class.</typeparam>
         public static void RegisterActivator<T>()
             where T : NotificationActivator, new()
         {
+            if (!DesktopBridgeHelpers.IsRunningAsUwp())
+            {
+                if (_aumid == null)
+                {
+                    throw new InvalidOperationException("You must call RegisterApplication first.");
+                }
+
+                String exePath = Process.GetCurrentProcess().MainModule.FileName;
+                RegisterComServer<T>(exePath);
+
+                using (var rootKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\AppUserModelId\" + _aumid))
+                {
+                    rootKey.SetValue("CustomActivator", string.Format("{{{0}}}", typeof(T).GUID));
+                }
+            }
+
             // Big thanks to FrecherxDachs for figuring out the following code which works in .NET Core 3: https://github.com/FrecherxDachs/UwpNotificationNetCoreTest
             var uuid = typeof(T).GUID;
             uint _cookie;

@@ -29,7 +29,7 @@ namespace DesktopToastsApp
         protected override void OnStartup(StartupEventArgs e)
         {
             // Register AUMID, display details, COM server, and activator
-            DesktopNotificationManagerCompat.RegisterApplication<MyNotificationActivator>(
+            DesktopNotificationManagerCompat.RegisterApplication(
                 aumid: "WindowsNotifications.DesktopToasts",
                 displayName: "Desktop toasts app",
                 iconPath: "C:\\icon.png");
