@@ -185,8 +185,11 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ LPWSTR cm
 
     RETURN_IF_FAILED(winRtInitializer);
 
-    // Register AUMID and COM server (for Desktop Bridge apps, this no-ops)
-    RETURN_IF_FAILED(DesktopNotificationManagerCompat::RegisterApplication(L"WindowsNotifications.DesktopToastsCpp", L"C++ toasts", L"C:\\icon.png"));
+    // Register application (for Desktop Bridge apps, this no-ops)
+    RETURN_IF_FAILED(DesktopNotificationManagerCompat::RegisterApplication(
+        L"WindowsNotifications.DesktopToastsCpp",
+        L"C++ toasts",
+        L"C:\\icon.png"));
 
     // Register activator type
     RETURN_IF_FAILED(DesktopNotificationManagerCompat::RegisterActivator(__uuidof(NotificationActivator)));
