@@ -159,7 +159,7 @@ namespace DesktopToastsApp
             var toast = new ToastNotification(doc);
 
             // And then show it
-            DesktopNotificationManagerCompat.CreateToastNotifier().Show(toast);
+            ToastNotificationManagerCompat.CreateToastNotifier().Show(toast);
         }
     }
 }

@@ -142,7 +142,7 @@ namespace DesktopToastsApp
             var toast = new ToastNotification(doc);
 
             // And then show it
-            DesktopNotificationManagerCompat.CreateToastNotifier().Show(toast);
+            ToastNotificationManagerCompat.CreateToastNotifier().Show(toast);
         }
 
         private static bool _hasPerformedCleanup;
@@ -154,7 +154,7 @@ namespace DesktopToastsApp
 
             try
             {
-                if (DesktopNotificationManagerCompat.CanUseHttpImages)
+                if (ToastNotificationManagerCompat.CanUseHttpImages)
                 {
                     return httpImage;
                 }
@@ -216,7 +216,7 @@ namespace DesktopToastsApp
 
         private void ButtonClearToasts_Click(object sender, RoutedEventArgs e)
         {
-            DesktopNotificationManagerCompat.History.Clear();
+            ToastNotificationManagerCompat.History.Clear();
         }
     }
 }

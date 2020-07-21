@@ -49,13 +49,90 @@ using static DesktopNotifications.NotificationActivator;
 
 namespace DesktopNotifications
 {
-    public class DesktopNotificationManagerCompat
+    namespace Internal
+    {
+        /// <summary>
+        /// This is temporary to hide internal code when copy/pasted into a project... when as a NuGet package, internal classes will be hidden automatically.
+        /// </summary>
+        internal static class InteralSharedLogic
+        {
+            internal static string _aumid;
+
+            internal static bool _registeredAumidAndComServer;
+            internal static bool _registeredActivator;
+
+            internal static void EnsureRegistered()
+            {
+                // If not registered AUMID yet
+                if (!_registeredAumidAndComServer)
+                {
+                    // Check if Desktop Bridge
+                    if (DesktopBridgeHelpers.IsRunningAsUwp())
+                    {
+                        // Implicitly registered, all good!
+                        _registeredAumidAndComServer = true;
+                    }
+
+                    else
+                    {
+                        // Otherwise, incorrect usage
+                        throw new Exception("You must call RegisterApplication first.");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Code from https://github.com/qmatteoq/DesktopBridgeHelpers/edit/master/DesktopBridge.Helpers/Helpers.cs
+        /// </summary>
+        internal class DesktopBridgeHelpers
+        {
+            const long APPMODEL_ERROR_NO_PACKAGE = 15700L;
+
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            static extern int GetCurrentPackageFullName(ref int packageFullNameLength, StringBuilder packageFullName);
+
+            private static bool? _isRunningAsUwp;
+            public static bool IsRunningAsUwp()
+            {
+                if (_isRunningAsUwp == null)
+                {
+                    if (IsWindows7OrLower)
+                    {
+                        _isRunningAsUwp = false;
+                    }
+                    else
+                    {
+                        int length = 0;
+                        StringBuilder sb = new StringBuilder(0);
+                        int result = GetCurrentPackageFullName(ref length, sb);
+
+                        sb = new StringBuilder(length);
+                        result = GetCurrentPackageFullName(ref length, sb);
+
+                        _isRunningAsUwp = result != APPMODEL_ERROR_NO_PACKAGE;
+                    }
+                }
+
+                return _isRunningAsUwp.Value;
+            }
+
+            private static bool IsWindows7OrLower
+            {
+                get
+                {
+                    int versionMajor = Environment.OSVersion.Version.Major;
+                    int versionMinor = Environment.OSVersion.Version.Minor;
+                    double version = versionMajor + (double)versionMinor / 10;
+                    return version <= 6.1;
+                }
+            }
+        }
+    }
+
+    public static class DesktopNotificationManagerCompat
     {
         public const string TOAST_ACTIVATED_LAUNCH_ARG = "-ToastActivated";
-
-        private static bool _registeredAumidAndComServer;
-        private static string _aumid;
-        private static bool _registeredActivator;
 
         /// <summary>
         /// If you're not using UWP, MSIX, or sparse packages, you must call this method to register your AUMID with the Compat library and to
@@ -83,17 +160,17 @@ namespace DesktopNotifications
             }
 
             // If running as Desktop Bridge
-            if (DesktopBridgeHelpers.IsRunningAsUwp())
+            if (Internal.DesktopBridgeHelpers.IsRunningAsUwp())
             {
                 // Clear the AUMID since Desktop Bridge doesn't use it, and then we're done.
                 // Desktop Bridge apps are registered with platform through their manifest.
                 // Their LocalServer32 key is also registered through their manifest.
-                _aumid = null;
-                _registeredAumidAndComServer = true;
+                Internal.InteralSharedLogic._aumid = null;
+                Internal.InteralSharedLogic._registeredAumidAndComServer = true;
                 return;
             }
 
-            _aumid = aumid;
+            Internal.InteralSharedLogic._aumid = aumid;
 
             using (var rootKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\AppUserModelId\" + aumid))
             {
@@ -102,7 +179,7 @@ namespace DesktopNotifications
                 rootKey.SetValue("IconBackgroundColor", "FFDDDDDD"); // Only appears in the settings page, always setting to light gray since app icon is known to work well on light gray anyways since that's how it appears in Action Center
             }
 
-            _registeredAumidAndComServer = true;
+            Internal.InteralSharedLogic._registeredAumidAndComServer = true;
         }
 
         private static void RegisterComServer<T>(String exePath)
@@ -124,9 +201,9 @@ namespace DesktopNotifications
         public static void RegisterActivator<T>()
             where T : NotificationActivator, new()
         {
-            if (!DesktopBridgeHelpers.IsRunningAsUwp())
+            if (!Internal.DesktopBridgeHelpers.IsRunningAsUwp())
             {
-                if (_aumid == null)
+                if (Internal.InteralSharedLogic._aumid == null)
                 {
                     throw new InvalidOperationException("You must call RegisterApplication first.");
                 }
@@ -134,7 +211,7 @@ namespace DesktopNotifications
                 String exePath = Process.GetCurrentProcess().MainModule.FileName;
                 RegisterComServer<T>(exePath);
 
-                using (var rootKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\AppUserModelId\" + _aumid))
+                using (var rootKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\AppUserModelId\" + Internal.InteralSharedLogic._aumid))
                 {
                     rootKey.SetValue("CustomActivator", string.Format("{{{0}}}", typeof(T).GUID));
                 }
@@ -146,7 +223,7 @@ namespace DesktopNotifications
             CoRegisterClassObject(uuid, new NotificationActivatorClassFactory<T>(), CLSCTX_LOCAL_SERVER,
                 REGCLS_MULTIPLEUSE, out _cookie);
 
-            _registeredActivator = true;
+            Internal.InteralSharedLogic._registeredActivator = true;
         }
 
         [ComImport]
@@ -201,19 +278,22 @@ namespace DesktopNotifications
             uint dwClsContext,
             uint flags,
             out uint lpdwRegister);
+    }
 
+    public static class ToastNotificationManagerCompat
+    {
         /// <summary>
-        /// Creates a toast notifier. You must have called <see cref="RegisterActivator{T}"/> first (and also <see cref="RegisterAumidAndComServer(string)"/> if you're a classic Win32 app), or this will throw an exception.
+        /// Creates a toast notifier. If you're not using UWP/MSIX/sparse, you must have called <see cref="DesktopNotificationManagerCompat.RegisterApplication(string, string, string)"/> first, or this will throw an exception.
         /// </summary>
         /// <returns></returns>
         public static ToastNotifier CreateToastNotifier()
         {
-            EnsureRegistered();
+            Internal.InteralSharedLogic.EnsureRegistered();
 
-            if (_aumid != null)
+            if (Internal.InteralSharedLogic._aumid != null)
             {
                 // Non-Desktop Bridge
-                return ToastNotificationManager.CreateToastNotifier(_aumid);
+                return ToastNotificationManager.CreateToastNotifier(Internal.InteralSharedLogic._aumid);
             }
             else
             {
@@ -223,102 +303,28 @@ namespace DesktopNotifications
         }
 
         /// <summary>
-        /// Gets the <see cref="DesktopNotificationHistoryCompat"/> object. You must have called <see cref="RegisterActivator{T}"/> first (and also <see cref="RegisterAumidAndComServer(string)"/> if you're a classic Win32 app), or this will throw an exception.
+        /// Gets the <see cref="ToastNotificationHistoryCompat"/> object. You must have called <see cref="RegisterActivator{T}"/> first (and also <see cref="RegisterAumidAndComServer(string)"/> if you're a classic Win32 app), or this will throw an exception.
         /// </summary>
-        public static DesktopNotificationHistoryCompat History
+        public static ToastNotificationHistoryCompat History
         {
             get
             {
-                EnsureRegistered();
+                Internal.InteralSharedLogic.EnsureRegistered();
 
-                return new DesktopNotificationHistoryCompat(_aumid);
-            }
-        }
-
-        private static void EnsureRegistered()
-        {
-            // If not registered AUMID yet
-            if (!_registeredAumidAndComServer)
-            {
-                // Check if Desktop Bridge
-                if (DesktopBridgeHelpers.IsRunningAsUwp())
-                {
-                    // Implicitly registered, all good!
-                    _registeredAumidAndComServer = true;
-                }
-
-                else
-                {
-                    // Otherwise, incorrect usage
-                    throw new Exception("You must call RegisterAumidAndComServer first.");
-                }
-            }
-
-            // If not registered activator yet
-            if (!_registeredActivator)
-            {
-                // Incorrect usage
-                throw new Exception("You must call RegisterActivator first.");
+                return new ToastNotificationHistoryCompat(Internal.InteralSharedLogic._aumid);
             }
         }
 
         /// <summary>
         /// Gets a boolean representing whether http images can be used within toasts. This is true if running with package identity (MSIX or sparse package).
         /// </summary>
-        public static bool CanUseHttpImages { get { return DesktopBridgeHelpers.IsRunningAsUwp(); } }
-
-        /// <summary>
-        /// Code from https://github.com/qmatteoq/DesktopBridgeHelpers/edit/master/DesktopBridge.Helpers/Helpers.cs
-        /// </summary>
-        private class DesktopBridgeHelpers
-        {
-            const long APPMODEL_ERROR_NO_PACKAGE = 15700L;
-
-            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-            static extern int GetCurrentPackageFullName(ref int packageFullNameLength, StringBuilder packageFullName);
-
-            private static bool? _isRunningAsUwp;
-            public static bool IsRunningAsUwp()
-            {
-                if (_isRunningAsUwp == null)
-                {
-                    if (IsWindows7OrLower)
-                    {
-                        _isRunningAsUwp = false;
-                    }
-                    else
-                    {
-                        int length = 0;
-                        StringBuilder sb = new StringBuilder(0);
-                        int result = GetCurrentPackageFullName(ref length, sb);
-
-                        sb = new StringBuilder(length);
-                        result = GetCurrentPackageFullName(ref length, sb);
-
-                        _isRunningAsUwp = result != APPMODEL_ERROR_NO_PACKAGE;
-                    }
-                }
-
-                return _isRunningAsUwp.Value;
-            }
-
-            private static bool IsWindows7OrLower
-            {
-                get
-                {
-                    int versionMajor = Environment.OSVersion.Version.Major;
-                    int versionMinor = Environment.OSVersion.Version.Minor;
-                    double version = versionMajor + (double)versionMinor / 10;
-                    return version <= 6.1;
-                }
-            }
-        }
+        public static bool CanUseHttpImages => Internal.DesktopBridgeHelpers.IsRunningAsUwp();
     }
 
     /// <summary>
     /// Manages the toast notifications for an app including the ability the clear all toast history and removing individual toasts.
     /// </summary>
-    public sealed class DesktopNotificationHistoryCompat
+    public sealed class ToastNotificationHistoryCompat
     {
         private string _aumid;
         private ToastNotificationHistory _history;
@@ -327,7 +333,7 @@ namespace DesktopNotifications
         /// Do not call this. Instead, call <see cref="DesktopNotificationManagerCompat.History"/> to obtain an instance.
         /// </summary>
         /// <param name="aumid"></param>
-        internal DesktopNotificationHistoryCompat(string aumid)
+        internal ToastNotificationHistoryCompat(string aumid)
         {
             _aumid = aumid;
             _history = ToastNotificationManager.History;
