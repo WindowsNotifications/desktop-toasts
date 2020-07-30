@@ -39,7 +39,7 @@ namespace DesktopToastsApp
                 iconPath: "C:\\icon.png");
 
             // Listen to notification activation
-            //DesktopNotificationManagerCompat.OnActivated += Notification_OnActivated;
+            DesktopNotificationManagerCompat.OnActivated += Notification_OnActivated;
 
             //DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
 

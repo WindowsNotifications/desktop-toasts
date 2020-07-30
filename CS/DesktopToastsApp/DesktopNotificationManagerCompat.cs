@@ -45,6 +45,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using Windows.UI.Notifications;
 using static DesktopNotifications.NotificationActivator;
@@ -223,7 +224,7 @@ namespace DesktopNotifications
 
             tb.SetCustomAttribute(new CustomAttributeBuilder(
                 con: typeof(GuidAttribute).GetConstructor(new Type[] { typeof(string) }),
-                constructorArgs: new object[] { "50cfb67f-bc8a-477d-938c-93cf6bfb3321" }));
+                constructorArgs: new object[] { GenerateGuid(aumid) }));
 
             tb.SetCustomAttribute(new CustomAttributeBuilder(
                 con: typeof(ComVisibleAttribute).GetConstructor(new Type[] { typeof(bool) }),
@@ -265,6 +266,39 @@ namespace DesktopNotifications
             var activatorType = tb.CreateType();
 
             RegisterActivator(activatorType);
+        }
+
+        /// <summary>
+        /// From https://stackoverflow.com/a/41622689/1454643
+        /// Generates Guid based on String. Key assumption for this algorithm is that name is unique (across where it it's being used)
+        /// and if name byte length is less than 16 - it will be fetched directly into guid, if over 16 bytes - then we compute sha-1
+        /// hash from string and then pass it to guid.
+        /// </summary>
+        /// <param name="name">Unique name which is unique across where this guid will be used.</param>
+        /// <returns>For example "706C7567-696E-7300-0000-000000000000" for "plugins"</returns>
+        private static string GenerateGuid(String name)
+        {
+            byte[] buf = Encoding.UTF8.GetBytes(name);
+            byte[] guid = new byte[16];
+            if (buf.Length < 16)
+            {
+                Array.Copy(buf, guid, buf.Length);
+            }
+            else
+            {
+                using (SHA1 sha1 = SHA1.Create())
+                {
+                    byte[] hash = sha1.ComputeHash(buf);
+                    // Hash is 20 bytes, but we need 16. We loose some of "uniqueness", but I doubt it will be fatal
+                    Array.Copy(hash, guid, 16);
+                }
+            }
+
+            // Don't use Guid constructor, it tends to swap bytes. We want to preserve original string as hex dump.
+            string guidS = String.Format("{0:X2}{1:X2}{2:X2}{3:X2}-{4:X2}{5:X2}-{6:X2}{7:X2}-{8:X2}{9:X2}-{10:X2}{11:X2}{12:X2}{13:X2}{14:X2}{15:X2}",
+                guid[0], guid[1], guid[2], guid[3], guid[4], guid[5], guid[6], guid[7], guid[8], guid[9], guid[10], guid[11], guid[12], guid[13], guid[14], guid[15]);
+
+            return guidS;
         }
 
         private static void RegisterComServer(Type activatorType, String exePath)
