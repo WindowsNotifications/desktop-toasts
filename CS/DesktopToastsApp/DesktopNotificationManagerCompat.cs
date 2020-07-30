@@ -139,16 +139,18 @@ namespace DesktopNotifications
         public NotificationUserInput UserInput { get; set; }
     }
 
+    public delegate void OnActivated(NotificationActivatiedEventArgs e);
+
     public static class DesktopNotificationManagerCompat
     {
         /// <summary>
         /// Event that is triggered when a notification or notification button is clicked.
         /// </summary>
-        public static event EventHandler<NotificationActivatiedEventArgs> Activated;
+        public static event OnActivated OnActivated;
 
-        public static void OnActivated(string args, NotificationUserInput input, string aumid)
+        public static void OnActivatedInternal(string args, NotificationUserInput input, string aumid)
         {
-            Activated?.Invoke(null, new NotificationActivatiedEventArgs()
+            OnActivated?.Invoke(new NotificationActivatiedEventArgs()
             {
                 Arguments = args,
                 UserInput = input
@@ -255,7 +257,7 @@ namespace DesktopNotifications
             ilGen.Emit(OpCodes.Ldarg_3);
 
             Type[] paramListWID = { typeof(string), typeof(NotificationUserInput), typeof(string) };
-            ilGen.EmitCall(OpCodes.Call, typeof(DesktopNotificationManagerCompat).GetMethod(nameof(OnActivated)), paramListWID);
+            ilGen.EmitCall(OpCodes.Call, typeof(DesktopNotificationManagerCompat).GetMethod(nameof(OnActivatedInternal)), paramListWID);
 
             ilGen.Emit(OpCodes.Ret);
 
