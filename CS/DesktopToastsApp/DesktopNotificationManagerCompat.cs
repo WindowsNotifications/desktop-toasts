@@ -42,6 +42,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Text;
 using Windows.UI.Notifications;
@@ -130,8 +132,29 @@ namespace DesktopNotifications
         }
     }
 
+    public class NotificationActivatiedEventArgs
+    {
+        public string Arguments { get; set; }
+
+        public NotificationUserInput UserInput { get; set; }
+    }
+
     public static class DesktopNotificationManagerCompat
     {
+        /// <summary>
+        /// Event that is triggered when a notification or notification button is clicked.
+        /// </summary>
+        public static event EventHandler<NotificationActivatiedEventArgs> Activated;
+
+        public static void OnActivated(string args, NotificationUserInput input, string aumid)
+        {
+            Activated?.Invoke(null, new NotificationActivatiedEventArgs()
+            {
+                Arguments = args,
+                UserInput = input
+            });
+        }
+
         public const string TOAST_ACTIVATED_LAUNCH_ARG = "-ToastActivated";
 
         /// <summary>
@@ -180,13 +203,72 @@ namespace DesktopNotifications
             }
 
             Internal.InteralSharedLogic._registeredAumidAndComServer = true;
+
+            // https://stackoverflow.com/questions/24069352/c-sharp-typebuilder-generate-class-with-function-dynamically
+            AssemblyName aName = new AssemblyName("DynamicComActivator");
+            AssemblyBuilder aBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(aName, System.Reflection.Emit.AssemblyBuilderAccess.RunAndSave);
+
+            // For a single-module assembly, the module name is usually 
+            // the assembly name plus an extension.
+            ModuleBuilder mb = aBuilder.DefineDynamicModule(aName.Name, aName.Name + ".dll");
+
+            // Create class which extends NotificationActivator
+            TypeBuilder tb = mb.DefineType(
+                name: "MyNotificationActivator",
+                attr: TypeAttributes.Public,
+                parent: typeof(NotificationActivator),
+                interfaces: new Type[0]);
+
+            tb.SetCustomAttribute(new CustomAttributeBuilder(
+                con: typeof(GuidAttribute).GetConstructor(new Type[] { typeof(string) }),
+                constructorArgs: new object[] { "50cfb67f-bc8a-477d-938c-93cf6bfb3321" }));
+
+            tb.SetCustomAttribute(new CustomAttributeBuilder(
+                con: typeof(ComVisibleAttribute).GetConstructor(new Type[] { typeof(bool) }),
+                constructorArgs: new object[] { true }));
+
+            tb.SetCustomAttribute(new CustomAttributeBuilder(
+                con: typeof(ComSourceInterfacesAttribute).GetConstructor(new Type[] { typeof(Type) }),
+                constructorArgs: new object[] { typeof(INotificationActivationCallback) }));
+
+            tb.SetCustomAttribute(new CustomAttributeBuilder(
+                con: typeof(ClassInterfaceAttribute).GetConstructor(new Type[] { typeof(ClassInterfaceType) }),
+                constructorArgs: new object[] { ClassInterfaceType.None }));
+
+            // Create the OnActivated function
+            MethodBuilder mbOnActivated = tb.DefineMethod(
+                name: nameof(NotificationActivator.OnActivated),
+                attributes: MethodAttributes.Public | MethodAttributes.Virtual,
+                returnType: typeof(void),
+                parameterTypes: new Type[] { typeof(string), typeof(NotificationUserInput), typeof(string) });
+
+            tb.DefineMethodOverride(
+                methodInfoBody: mbOnActivated,
+                methodInfoDeclaration: typeof(NotificationActivator).GetMethod(nameof(NotificationActivator.OnActivated)));
+
+            // Create the OnActivated function body
+            ILGenerator ilGen = mbOnActivated.GetILGenerator();
+
+            ilGen.Emit(OpCodes.Nop);
+            ilGen.Emit(OpCodes.Ldarg_1);
+            ilGen.Emit(OpCodes.Ldarg_2);
+            ilGen.Emit(OpCodes.Ldarg_3);
+
+            Type[] paramListWID = { typeof(string), typeof(NotificationUserInput), typeof(string) };
+            ilGen.EmitCall(OpCodes.Call, typeof(DesktopNotificationManagerCompat).GetMethod(nameof(OnActivated)), paramListWID);
+
+            ilGen.Emit(OpCodes.Ret);
+
+
+            var activatorType = tb.CreateType();
+
+            RegisterActivator(activatorType);
         }
 
-        private static void RegisterComServer<T>(String exePath)
-            where T : NotificationActivator
+        private static void RegisterComServer(Type activatorType, String exePath)
         {
             // We register the EXE to start up when the notification is activated
-            string regString = String.Format("SOFTWARE\\Classes\\CLSID\\{{{0}}}\\LocalServer32", typeof(T).GUID);
+            string regString = String.Format("SOFTWARE\\Classes\\CLSID\\{{{0}}}\\LocalServer32", activatorType.GUID);
             var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(regString);
 
             // Include a flag so we know this was a toast activation and should wait for COM to process
@@ -198,8 +280,7 @@ namespace DesktopNotifications
         /// Registers the activator type as a COM server client so that Windows can launch your activator. If not using UWP/MSIX/sparse, you must call <see cref="RegisterApplication(string, string, string)"/> first.
         /// </summary>
         /// <typeparam name="T">Your implementation of <see cref="NotificationActivator"/>. Must have GUID and ComVisible attributes on class.</typeparam>
-        public static void RegisterActivator<T>()
-            where T : NotificationActivator, new()
+        public static void RegisterActivator(Type activatorType)
         {
             if (!Internal.DesktopBridgeHelpers.IsRunningAsUwp())
             {
@@ -209,18 +290,18 @@ namespace DesktopNotifications
                 }
 
                 String exePath = Process.GetCurrentProcess().MainModule.FileName;
-                RegisterComServer<T>(exePath);
+                RegisterComServer(activatorType, exePath);
 
                 using (var rootKey = Registry.CurrentUser.CreateSubKey(@"Software\Classes\AppUserModelId\" + Internal.InteralSharedLogic._aumid))
                 {
-                    rootKey.SetValue("CustomActivator", string.Format("{{{0}}}", typeof(T).GUID));
+                    rootKey.SetValue("CustomActivator", string.Format("{{{0}}}", activatorType.GUID));
                 }
             }
 
             // Big thanks to FrecherxDachs for figuring out the following code which works in .NET Core 3: https://github.com/FrecherxDachs/UwpNotificationNetCoreTest
-            var uuid = typeof(T).GUID;
+            var uuid = activatorType.GUID;
             uint _cookie;
-            CoRegisterClassObject(uuid, new NotificationActivatorClassFactory<T>(), CLSCTX_LOCAL_SERVER,
+            CoRegisterClassObject(uuid, new NotificationActivatorClassFactory(activatorType), CLSCTX_LOCAL_SERVER,
                 REGCLS_MULTIPLEUSE, out _cookie);
 
             Internal.InteralSharedLogic._registeredActivator = true;
@@ -245,8 +326,15 @@ namespace DesktopNotifications
         private const int S_OK = 0;
         private static readonly Guid IUnknownGuid = new Guid("00000000-0000-0000-C000-000000000046");
 
-        private class NotificationActivatorClassFactory<T> : IClassFactory where T : NotificationActivator, new()
+        private class NotificationActivatorClassFactory : IClassFactory
         {
+            private Type _activatorType;
+
+            public NotificationActivatorClassFactory(Type activatorType)
+            {
+                _activatorType = activatorType;
+            }
+
             public int CreateInstance(IntPtr pUnkOuter, ref Guid riid, out IntPtr ppvObject)
             {
                 ppvObject = IntPtr.Zero;
@@ -254,9 +342,9 @@ namespace DesktopNotifications
                 if (pUnkOuter != IntPtr.Zero)
                     Marshal.ThrowExceptionForHR(CLASS_E_NOAGGREGATION);
 
-                if (riid == typeof(T).GUID || riid == IUnknownGuid)
+                if (riid == _activatorType.GUID || riid == IUnknownGuid)
                     // Create the instance of the .NET object
-                    ppvObject = Marshal.GetComInterfaceForObject(new T(),
+                    ppvObject = Marshal.GetComInterfaceForObject(Activator.CreateInstance(_activatorType),
                         typeof(INotificationActivationCallback));
                 else
                     // The object that ppvObject points to does not support the
