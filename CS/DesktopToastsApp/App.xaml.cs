@@ -41,13 +41,11 @@ namespace DesktopToastsApp
             // Listen to notification activation
             DesktopNotificationManagerCompat.OnActivated += Notification_OnActivated;
 
-            //DesktopNotificationManagerCompat.RegisterActivator<MyNotificationActivator>();
-
             // If launched from a toast
             // This launch arg was specified in our WiX installer where we register the LocalServer32 exe path.
-            if (e.Args.Contains(DesktopNotificationManagerCompat.TOAST_ACTIVATED_LAUNCH_ARG))
+            if (DesktopNotificationManagerCompat.WasProcessToastActivated())
             {
-                // Our NotificationActivator code will run after this completes,
+                // Our Notification_OnActivated code will run after this completes,
                 // and will show a window if necessary.
             }
 

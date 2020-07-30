@@ -41,6 +41,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -158,7 +159,12 @@ namespace DesktopNotifications
             });
         }
 
-        public const string TOAST_ACTIVATED_LAUNCH_ARG = "-ToastActivated";
+        internal const string TOAST_ACTIVATED_LAUNCH_ARG = "-ToastActivated";
+
+        public static bool WasProcessToastActivated()
+        {
+            return Environment.GetCommandLineArgs().Contains(TOAST_ACTIVATED_LAUNCH_ARG);
+        }
 
         /// <summary>
         /// If you're not using UWP, MSIX, or sparse packages, you must call this method to register your AUMID with the Compat library and to
@@ -208,6 +214,7 @@ namespace DesktopNotifications
             Internal.InteralSharedLogic._registeredAumidAndComServer = true;
 
             // https://stackoverflow.com/questions/24069352/c-sharp-typebuilder-generate-class-with-function-dynamically
+            // For .NET Core we're going to need https://stackoverflow.com/questions/36937276/is-there-any-replace-of-assemblybuilder-definedynamicassembly-in-net-core
             AssemblyName aName = new AssemblyName("DynamicComActivator");
             AssemblyBuilder aBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(aName, System.Reflection.Emit.AssemblyBuilderAccess.RunAndSave);
 
