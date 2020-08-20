@@ -161,6 +161,24 @@ namespace DesktopNotifications
 
         internal const string TOAST_ACTIVATED_LAUNCH_ARG = "-ToastActivated";
 
+        static DesktopNotificationManagerCompat()
+        {
+            Initialize();
+        }
+
+        private static void Initialize()
+        {
+            // Win32 apps are typically uniquely identified based on their process name
+            string aumid = Process.GetCurrentProcess().MainModule.FileName;
+
+            // Win32 app display names come from their process name
+            string displayName = Process.GetCurrentProcess().ProcessName;
+
+            string iconPath = "C:\\icon.png"; // TODO: Need to grab icon from process name
+
+            RegisterApplication(aumid, displayName, iconPath);
+        }
+
         public static bool WasProcessToastActivated()
         {
             return Environment.GetCommandLineArgs().Contains(TOAST_ACTIVATED_LAUNCH_ARG);
@@ -174,7 +192,7 @@ namespace DesktopNotifications
         /// <param name="aumid">An AUMID that uniquely identifies your application.</param>
         /// <param name="displayName">Your app's display name, which will appear on toasts and within Action Center.</param>
         /// <param name="iconPath">Your app's icon, which will appear on toasts and within Action Center.</param>
-        public static void RegisterApplication(string aumid, string displayName, string iconPath)
+        private static void RegisterApplication(string aumid, string displayName, string iconPath)
         {
             if (string.IsNullOrWhiteSpace(aumid))
             {
