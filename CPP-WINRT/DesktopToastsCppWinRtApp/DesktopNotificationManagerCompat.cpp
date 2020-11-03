@@ -1,3 +1,15 @@
+// ******************************************************************
+// Copyright (c) Microsoft. All rights reserved.
+// This code is licensed under the MIT License (MIT).
+// THE CODE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
+// THE CODE OR THE USE OR OTHER DEALINGS IN THE CODE.
+// ******************************************************************
+
 #include "pch.h"
 #include "DesktopNotificationManagerCompat.h"
 
@@ -24,6 +36,7 @@ bool IsContainerized();
 bool HasIdentity();
 void SetRegistryKeyValue(HKEY hKey, std::wstring subKey, std::wstring valueName, std::wstring value);
 void DeleteRegistryKeyValue(HKEY hKey, std::wstring subKey, std::wstring valueName);
+void DeleteRegistryKey(HKEY hKey, std::wstring subKey);
 void EnsureRegistered();
 std::wstring CreateAndRegisterActivator();
 std::wstring GenerateGuid(std::wstring name);
@@ -93,6 +106,52 @@ ToastNotifier DesktopNotificationManagerCompat::CreateToastNotifier()
 	{
 		return ToastNotificationManager::CreateToastNotifier(_win32Aumid);
 	}
+}
+
+void DesktopNotificationManagerCompat::Uninstall()
+{
+	if (IsContainerized())
+	{
+		// Packaged containerized apps automatically clean everything up already
+		return;
+	}
+
+	if (!HasIdentity() && !_win32Aumid.empty())
+	{
+		try
+		{
+			// Remove all scheduled notifications (do this first before clearing current notifications)
+			auto notifier = CreateToastNotifier();
+			auto scheduled = notifier.GetScheduledToastNotifications();
+			for (int i = 0; i < scheduled.Size(); i++)
+			{
+				try
+				{
+					notifier.RemoveFromSchedule(scheduled.GetAt(i));
+				}
+				catch (...) {}
+			}
+		}
+		catch (...) {}
+
+		try
+		{
+			// Clear all current notifications
+			History().Clear();
+		}
+		catch (...) {}
+	}
+
+	try
+	{
+		// Remove registry key
+		if (!_win32Aumid.empty())
+		{
+			std::wstring subKey = LR"(SOFTWARE\Classes\AppUserModelId\)" + _win32Aumid;
+			DeleteRegistryKey(HKEY_CURRENT_USER, subKey);
+		}
+	}
+	catch (...) {}
 }
 
 std::wstring GenerateGuid(std::wstring name)
@@ -281,6 +340,13 @@ void DeleteRegistryKeyValue(HKEY hKey, std::wstring subKey, std::wstring valueNa
 		hKey,
 		subKey.c_str(),
 		valueName.c_str()));
+}
+
+void DeleteRegistryKey(HKEY hKey, std::wstring subKey)
+{
+	winrt::check_hresult(::RegDeleteKey(
+		hKey,
+		subKey.c_str()));
 }
 
 bool _checkedIsContainerized;

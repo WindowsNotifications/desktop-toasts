@@ -93,7 +93,7 @@ void start()
 
     while (true)
     {
-        std::cout << "\n\nHere are your options...\n\n - 1. Send a toast\n - 2. Clear all toasts\n - 3. Exit\n\nEnter a number to continue: ";
+        std::cout << "\n\nHere are your options...\n\n - 1. Send a toast\n - 2. Clear all toasts\n - 3. Uninstall and quit\n - 4. Exit\n\nEnter a number to continue: ";
 
         bool exit = false;
 
@@ -106,6 +106,10 @@ void start()
             DesktopNotificationManagerCompat::History().Clear();
             break;
         case '3':
+            DesktopNotificationManagerCompat::Uninstall();
+            exit = true;
+            break;
+        case '4':
             exit = true;
             break;
         default:
