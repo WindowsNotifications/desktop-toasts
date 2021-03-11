@@ -10,7 +10,6 @@
 // THE CODE OR THE USE OR OTHER DEALINGS IN THE CODE.
 // ******************************************************************
 
-using DesktopNotifications;
 using Microsoft.QueryStringDotNET;
 using Microsoft.Toolkit.Uwp.Notifications;
 using System;
@@ -54,95 +53,41 @@ namespace DesktopToastsApp
             int conversationId = 5;
 
             // Construct the toast content
-            ToastContent toastContent = new ToastContent()
-            {
-                // Arguments when the user taps body of toast
-                Launch = new QueryString()
-                {
-                    { "action", "viewConversation" },
-                    { "conversationId", conversationId.ToString() }
+            new ToastContentBuilder()
 
-                }.ToString(),
+                // Arguments when user taps body of toast
+                .AddArgument("action", "viewConversation")
+                .AddArgument("conversationId", conversationId)
 
-                Visual = new ToastVisual()
-                {
-                    BindingGeneric = new ToastBindingGeneric()
-                    {
-                        Children =
-                        {
-                            new AdaptiveText()
-                            {
-                                Text = title
-                            },
+                // Title and subtitle
+                .AddText(title)
+                .AddText(content)
 
-                            new AdaptiveText()
-                            {
-                                Text = content
-                            },
+                // Non-Desktop Bridge apps cannot use HTTP images, so
+                // we download and reference the image locally
+                .AddInlineImage(new Uri(await DownloadImageToDisk(image)))
 
-                            new AdaptiveImage()
-                            {
-                                // Non-Desktop Bridge apps cannot use HTTP images, so
-                                // we download and reference the image locally
-                                Source = await DownloadImageToDisk(image)
-                            }
-                        },
+                .AddAppLogoOverride(new Uri(await DownloadImageToDisk("https://unsplash.it/64?image=1005")), ToastGenericAppLogoCrop.Circle)
 
-                        AppLogoOverride = new ToastGenericAppLogo()
-                        {
-                            Source = await DownloadImageToDisk("https://unsplash.it/64?image=1005"),
-                            HintCrop = ToastGenericAppLogoCrop.Circle
-                        }
-                    }
-                },
+                .AddInputTextBox("tbReply", "Type a response")
 
-                Actions = new ToastActionsCustom()
-                {
-                    Inputs =
-                    {
-                        new ToastTextBox("tbReply")
-                        {
-                            PlaceholderContent = "Type a response"
-                        }
-                    },
+                // Note that for non-UWP apps, there's no need to specify background activation,
+                // since our activator decides whether to process in background or launch foreground window
+                .AddButton(new ToastButton()
+                    .SetContent("Reply")
+                    .AddArgument("action", "reply")) // Actions added here supplement (and overwrite) top-level actions
 
-                    Buttons =
-                    {
-                        // Note that there's no reason to specify background activation, since our COM
-                        // activator decides whether to process in background or launch foreground window
-                        new ToastButton("Reply", new QueryString()
-                        {
-                            { "action", "reply" },
-                            { "conversationId", conversationId.ToString() }
+                .AddButton(new ToastButton()
+                    .SetContent("Like")
+                    .AddArgument("action", "like"))
 
-                        }.ToString()),
+                .AddButton(new ToastButton()
+                    .SetContent("View")
+                    .AddArgument("action", "viewImage")
+                    .AddArgument("imageUrl", image))
 
-                        new ToastButton("Like", new QueryString()
-                        {
-                            { "action", "like" },
-                            { "conversationId", conversationId.ToString() }
-
-                        }.ToString()),
-
-                        new ToastButton("View", new QueryString()
-                        {
-                            { "action", "viewImage" },
-                            { "imageUrl", image }
-
-                        }.ToString())
-                    }
-                }
-            };
-
-            // Make sure to use Windows.Data.Xml.Dom
-            var doc = new XmlDocument();
-            doc.LoadXml(toastContent.GetContent());
-
-            // And create the toast notification
-            var toast = new ToastNotification(doc);
-
-            // And then show it
-            DesktopNotificationManagerCompat.CreateToastNotifier().Show(toast);
+                // And show the toast!
+                .Show();
         }
 
         private static bool _hasPerformedCleanup;
@@ -154,7 +99,7 @@ namespace DesktopToastsApp
 
             try
             {
-                if (DesktopNotificationManagerCompat.CanUseHttpImages)
+                if (ToastNotificationManagerCompat.CanUseHttpImages)
                 {
                     return httpImage;
                 }
@@ -216,7 +161,7 @@ namespace DesktopToastsApp
 
         private void ButtonClearToasts_Click(object sender, RoutedEventArgs e)
         {
-            DesktopNotificationManagerCompat.History.Clear();
+            ToastNotificationManagerCompat.History.Clear();
         }
     }
 }
