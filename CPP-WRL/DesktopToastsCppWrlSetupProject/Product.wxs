@@ -29,7 +29,7 @@
                 <Shortcut Id="ApplicationStartMenuShortcut" Name="Desktop Toasts C++" Description="Desktop toasts sample" Target="[INSTALLFOLDER]DesktopToastsCppWrlApp.exe" WorkingDirectory="INSTALLFOLDER">
 
                     <!--AUMID-->
-                    <ShortcutProperty Key="System.AppUserModel.ID" Value="WindowsNotifications.DesktopToastsCppWrl"/>
+                    <ShortcutProperty Key="System.AppUserModel.ID" Value="WindowsNotifications.DesktopToastsCpp"/>
 
                     <!--COM CLSID, specifying which CLSID to activate when toast clicked-->
                     <ShortcutProperty Key="System.AppUserModel.ToastActivatorCLSID" Value="{23A5B06E-20BB-4E7E-A0AC-6982ED6A6041}"></ShortcutProperty>
